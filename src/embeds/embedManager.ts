@@ -46,7 +46,7 @@ export class EmbedManager {
             new TikTokEmbed(plugin),
             new SoundCloudEmbed(plugin),
             new InstagramEmbed(plugin),
-			new MastodonEmbed(plugin);
+			new MastodonEmbed(plugin),
 
         ];
 
