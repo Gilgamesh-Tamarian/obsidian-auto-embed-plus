@@ -1,3 +1,4 @@
+import { setCssProps } from "../utility";
 import { SupportedWebsites } from "src/settings-tab";
 import { EmbedBase } from "./embedBase";
 
@@ -36,7 +37,7 @@ export class TwitterEmbed extends EmbedBase {
 
         iframe.dataset.twitterPostId = postId;
         if (this.sizeCache[postId] && this.sizeCache[postId].height) {
-            iframe.style.height = this.sizeCache[postId].height + "px";
+            setCssProps(iframe, { height: this.sizeCache[postId].height + "px" });
         }
 
         return iframe;
@@ -83,7 +84,7 @@ export class TwitterEmbed extends EmbedBase {
             
             const height = (params["height"] as number) + 1;
             // iframe.style.width = ((params["width"] as number) + 1) + "px";
-            iframe.style.height = height + "px";
+            setCssProps(iframe, { height: height + "px" });
             
             this.resizeContainer(iframe, iframe.style.height);
             

@@ -2,6 +2,7 @@ import { requestUrl } from "obsidian";
 import AutoEmbedPlugin from "src/main";
 import { PreloadOptions, SupportedWebsites } from "src/settings-tab";
 import { Dictionary, Size } from "src/utility";
+import { setCssProps } from "../utility";
 
 export class BaseEmbedData {
     embedSource: EmbedBase;
@@ -214,10 +215,10 @@ export abstract class EmbedBase {
 
         // Applying options
         if (data.width)
-            embedResult.containerEl.style.width = data.width;
+            setCssProps(embedResult.containerEl, { width: data.width });
         
         if (data.height) {
-            embedResult.containerEl.style.height = data.height;
+            setCssProps(embedResult.containerEl, { height: data.height });
         }
     }
 
@@ -260,10 +261,10 @@ export abstract class EmbedBase {
     resizeContainer(el: HTMLElement, height?: string, width?: string) {
         // Quick way to resize container. A better way might be to pass EmbedResult
         if (height && el.parentElement)
-            el.parentElement.style.height = height;
+            setCssProps(el.parentElement, { height });
         
         if (width && el.parentElement)
-                el.parentElement.style.width = width;
+                setCssProps(el.parentElement, { width });
     }
 
     // ===== ERRORS =====

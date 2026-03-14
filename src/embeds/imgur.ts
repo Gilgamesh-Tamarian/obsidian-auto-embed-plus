@@ -1,3 +1,4 @@
+import { setCssProps } from "../utility";
 import { SupportedWebsites } from "src/settings-tab";
 import { EmbedBase } from "./embedBase";
 
@@ -24,11 +25,11 @@ export class ImgurEmbed extends EmbedBase {
 
         iframe.dataset.imgurId = imgurId;
         if (this.sizeCache[imgurId] && this.sizeCache[imgurId].height) {
-            iframe.style.height = this.sizeCache[imgurId].height + "px";
+            setCssProps(iframe, { height: this.sizeCache[imgurId].height + "px" });
             
             // Optional
             if (this.sizeCache[imgurId].width)
-                iframe.style.width = this.sizeCache[imgurId].width + "px";
+                setCssProps(iframe, { width: this.sizeCache[imgurId].width + "px" });
         }
         
         iframe.setAttribute("scrolling", "no");
@@ -59,8 +60,8 @@ export class ImgurEmbed extends EmbedBase {
             const iframe = iframes[i] as HTMLIFrameElement;
                 
             if (data.message === "resize_imgur") {
-                iframe.style.height = data.height + "px";
-                iframe.style.width = data.width + "px";
+                setCssProps(iframe, { height: data.height + "px" });
+                setCssProps(iframe, { width: data.width + "px" });
 
                 this.resizeContainer(iframe, iframe.style.height, iframe.style.width);
 

@@ -1,3 +1,4 @@
+import { setCssProps } from "../utility";
 import { FallbackOptions, SupportedWebsites } from "src/settings-tab";
 import { BaseEmbedData, EmbedBase } from "./embedBase";
 import { requestUrl } from "obsidian";
@@ -29,19 +30,19 @@ export class DefaultFallbackEmbed extends EmbedBase {
                 iframe.dataset.containerClass = "default-fallback-embed";
                 
                 if (embedOptions.width)
-                    embedContainer.style.width = embedOptions.width;
+                    setCssProps(embedContainer, { width: embedOptions.width });
                 else {
                     const width = this.plugin.settings.fallbackWidth;
                     if (width) 
-                        embedContainer.style.width = width;
+                        setCssProps(embedContainer, { width });
                 }
                 
                 if (embedOptions.height)
-                    embedContainer.style.height = embedOptions.height;
+                    setCssProps(embedContainer, { height: embedOptions.height });
                 else {
                     const height = this.plugin.settings.fallbackHeight;
                     if (height) 
-                        embedContainer.style.height = height;
+                        setCssProps(embedContainer, { height });
                 }
 
                 embedContainer.appendChild(iframe);

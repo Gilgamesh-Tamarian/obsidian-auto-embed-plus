@@ -1,3 +1,4 @@
+import { setCssProps } from "../utility";
 import { SupportedWebsites } from "src/settings-tab";
 import { EmbedBase } from "./embedBase";
 
@@ -35,11 +36,11 @@ export class InstagramEmbed extends EmbedBase {
 
         function resizeEmbed() {
             if (isProfile) {
-                iframe.style.height = (0.7 * iframe.offsetWidth + 200) + "px";
+                setCssProps(iframe, { height: (0.7 * iframe.offsetWidth + 200) + "px" });
             }
             else {
                 // iframe.style.height = (0.563 * iframe.offsetWidth + 206) + "px";
-                iframe.style.height = (1.25 * iframe.offsetWidth + 208) + "px";
+                setCssProps(iframe, { height: (1.25 * iframe.offsetWidth + 208) + "px" });
             }
         }
 

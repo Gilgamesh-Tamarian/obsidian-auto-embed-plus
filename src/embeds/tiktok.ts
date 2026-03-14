@@ -1,3 +1,4 @@
+import { setCssProps } from "../utility";
 import { SupportedWebsites } from "src/settings-tab";
 import { EmbedBase } from "./embedBase";
 
@@ -27,7 +28,7 @@ export class TikTokEmbed extends EmbedBase {
         // console.log("Cache: " + JSON.stringify(this.sizeCache))
         iframe.dataset.tiktokId = tiktokId;
         if (this.sizeCache[tiktokId] && this.sizeCache[tiktokId].height) {
-            iframe.style.height = this.sizeCache[tiktokId].height + "px";
+            setCssProps(iframe, { height: this.sizeCache[tiktokId].height + "px" });
         }
 
         return iframe;
@@ -65,7 +66,7 @@ export class TikTokEmbed extends EmbedBase {
             // Check where the message came from
             if (iframe.contentWindow == e.source)
             {
-                iframe.style.height = data.height + "px";
+                setCssProps(iframe, { height: data.height + "px" });
 
                 this.resizeContainer(iframe, iframe.style.height);
 

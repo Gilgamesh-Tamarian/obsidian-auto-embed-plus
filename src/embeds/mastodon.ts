@@ -1,5 +1,6 @@
 import { SupportedWebsites } from "src/settings-tab";
 import { EmbedBase } from "./embedBase";
+import { setCssProps } from "../utility";
 
 export class MastodonEmbed extends EmbedBase {
 
@@ -79,20 +80,26 @@ export class MastodonEmbed extends EmbedBase {
             "allow-popups"
         );
 
+
         // Allow scrolling
         iframe.setAttribute("scrolling", "auto");
-        iframe.style.overflow = "auto";
-
-        iframe.style.width = "100%";
-        iframe.style.border = "0";
+        setCssProps(iframe, {
+            overflow: "auto",
+            width: "100%",
+            border: "0"
+        });
 
         // Set default height for Mastodon embeds from user settings
         const defaultHeight = this.plugin.settings.mastodonDefaultHeight || "750";
-        iframe.style.height = defaultHeight.endsWith("px") ? defaultHeight : `${defaultHeight}px`;
+        setCssProps(iframe, {
+            height: defaultHeight.endsWith("px") ? defaultHeight : `${defaultHeight}px`
+        });
 
         // Restore cached size if known
         if (this.sizeCache[postId] && this.sizeCache[postId].height) {
-            iframe.style.height = this.sizeCache[postId].height + "px";
+            setCssProps(iframe, {
+                height: this.sizeCache[postId].height + "px"
+            });
         }
 
         // Add allowfullscreen and allowtransparency
@@ -126,20 +133,20 @@ export class MastodonEmbed extends EmbedBase {
         if (iframes.length === 0)
             return;
 
-        for (let i = 0; i < iframes.length; ++i) {
-            const iframe = iframes[i] as HTMLIFrameElement;
-            iframe.style.height = height + "px";
-            // Also resize the container to match the iframe height
-            this.resizeContainer(iframe, iframe.style.height);
-            if (iframe.parentElement) {
-                iframe.parentElement.style.height = iframe.style.height;
+            for (let i = 0; i < iframes.length; ++i) {
+                const iframe = iframes[i] as HTMLIFrameElement;
+                setCssProps(iframe, { height: height + "px" });
+                // Also resize the container to match the iframe height
+                this.resizeContainer(iframe, iframe.style.height);
+                if (iframe.parentElement) {
+                    setCssProps(iframe.parentElement, { height: iframe.style.height });
+                }
+                const postId = iframe.dataset.mastodonPostId;
+                if (postId)
+                    this.sizeCache[postId] = {
+                        width: 0,
+                        height: height
+                    };
             }
-            const postId = iframe.dataset.mastodonPostId;
-            if (postId)
-                this.sizeCache[postId] = {
-                    width: 0,
-                    height: height
-                };
-        }
     }
 }

@@ -1,3 +1,4 @@
+import { setCssProps } from "../utility";
 import { SupportedWebsites } from "src/settings-tab";
 import { EmbedBase } from "./embedBase";
 
@@ -46,7 +47,7 @@ export class RedditEmbed extends EmbedBase {
         // console.log("Cache: " + JSON.stringify(this.sizeCache))
         iframe.dataset.redditPostId = postId;
         if (this.sizeCache[postId] && this.sizeCache[postId].height) {
-            iframe.style.height = this.sizeCache[postId].height + "px";
+            setCssProps(iframe, { height: this.sizeCache[postId].height + "px" });
         }
 
         // iframe.style.height="unset";
@@ -78,7 +79,7 @@ export class RedditEmbed extends EmbedBase {
             if (iframe.contentWindow == e.source)
             {
                 const height = data.data;
-                iframe.style.height = height + "px";
+                setCssProps(iframe, { height: height + "px" });
 
                 this.resizeContainer(iframe, iframe.style.height);
                 
