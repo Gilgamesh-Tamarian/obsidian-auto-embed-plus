@@ -1,16 +1,18 @@
-[![GitHub manifest version](https://img.shields.io/github/manifest-json/v/gnoxnahte/obsidian-auto-embed)](../../releases)
-[![GitHub last commit](https://img.shields.io/github/last-commit/gnoxnahte/obsidian-auto-embed)](../../commits/main/)
-[![GitHub Open Issues](https://img.shields.io/github/issues/gnoxnahte/obsidian-auto-embed)](../../issues)
-[![GitHub Closed Issues](https://img.shields.io/github/issues-closed/gnoxnahte/obsidian-auto-embed)](../../issues?q=is%3Aissue+is%3Aclosed)
-[![GitHub License](https://img.shields.io/github/license/gnoxnahte/obsidian-auto-embed)](/LICENSE)
-[![Obsidian Downloads](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fobsidianmd%2Fobsidian-releases%2Fmaster%2Fcommunity-plugin-stats.json&query=%24%5B%22auto-embed%22%5D.downloads&logo=obsidian&logoColor=a88bfa&label=downloads&color=a88bfa)](https://obsidian.md/plugins?id=auto-embed)
+[![GitHub manifest version](https://img.shields.io/github/manifest-json/v/Gilgamesh-Tamarian/obsidian-auto-embed-plus)](../../releases)
+[![GitHub last commit](https://img.shields.io/github/last-commit/Gilgamesh-Tamarian/obsidian-auto-embed-plus)](../../commits/main/)
+[![GitHub Open Issues](https://img.shields.io/github/issues/Gilgamesh-Tamarian/obsidian-auto-embed-plus)](../../issues)
+[![GitHub Closed Issues](https://img.shields.io/github/issues-closed/Gilgamesh-Tamarian/obsidian-auto-embed-plus)](../../issues?q=is%3Aissue+is%3Aclosed)
+[![GitHub License](https://img.shields.io/github/license/Gilgamesh-Tamarian/obsidian-auto-embed-plus)](/LICENSE)
 
-# obsidian-auto-embed
+# obsidian-auto-embed-plus
 [Obsidian](https://obsidian.md/) plugin to help embed links automatically instead of using iframes
- 
+
+This is a fork of GnoxNahte's [obsidian-auto-embed](https://github.com/GnoxNahte/obsidian-auto-embed), which does not appear to be in active development. Thus far, support for Mastodon has been added.
+
+
 ## Getting Started
 Assuming you have [Obsidian](https://obsidian.md/) downloaded, 
-Download the plugin: https://obsidian.md/plugins?id=auto-embed
+Download the plugin: https://obsidian.md/plugins?id=auto-embed-plus (tentative)
 
 ### Embedding links
 1. Paste a link
@@ -30,6 +32,7 @@ Auto embeds websites like: [Imgur](https://imgur.com/), [CodePen](https://codepe
 - [X](https://x.com) *
 - [Reddit](https://www.reddit.com/)
 - [TikTok](https://www.tiktok.com/)
+- [Mastodon](https://mastodon.social/)*
 
 #### Sound/Music:
 - [Spotify](https://open.spotify.com/) *
@@ -88,7 +91,7 @@ A brief overview with some steps on how the plugin works. *Not required to use t
 - [ ] Add support for other websites
 	- [ ] Google Maps
 	- [ ] Google Calendar
-	- [ ] Mastodon. Since there isn't a good way to check if the url is from Mastodon, have a setting that lets users input their own servers to be embedded as Mastodon. 
+	- [x] Mastodon. Since there isn't a good way to check if the url is from Mastodon, have a setting that lets users input their own servers to be embedded as Mastodon. 
 	- [ ] Other websites. [Iframely](https://iframely.com/domains) has a list of websites that can be embedded.
 - [ ] Add preview websites when hovering a link and holding `Ctrl` for websites that aren't embedded using the syntax.
 - [ ] Add tests
@@ -108,27 +111,27 @@ A brief overview with some steps on how the plugin works. *Not required to use t
 		- Rarely happens but sometimes it glitches out and doesn't let you edit. When it does that, either restart the app or switch to [Source mode](https://help.obsidian.md/Editing+and+formatting/Edit+and+preview+Markdown#Source+mode).
 - Website specific
 	- **Spotify**: Only able to play 30 seconds of a song. Spotify only allows when the user is logged in to the browser, which isn't possible in Obsidian.
- 	- **Reddit**: Share link (link with `/s/` instead of `/comments/` in the URL) isn't supported. As a workaround, open the link in a browser and Reddit should redirect it to the `/comments/` link which is supported.
+	- **Reddit**: Share link (link with `/s/` instead of `/comments/` in the URL) isn't supported. As a workaround, open the link in a browser and Reddit should redirect it to the `/comments/` link which is supported.
 	- **Notion**: The notion note needs to be a [published website](https://www.notion.so/help/public-pages-and-web-publishing). Also, the plugin isn't doing anything special for Notion. Unlike other websites, it's just using the raw link as an iframe.
 	- **Twitter & YouTube**: Since [Obsidian supports it](https://help.obsidian.md/Editing+and+formatting/Embed+web+pages), I won't interfere with it. However, it means [options](#custom-options) isn't supported. I might be able to replace Obsidian's embeds with mine, but [options](#custom-options) will only work in *Live Preview*, but not *Reading Mode*. This makes an inconsistent user experience but if you want this feature, contact me / create a pull request.
 	- **Twitter / X**: Obsidian supports https://twitter.com but not https://x.com. This plugin just helps to embed X. If you replace Twitter with x, or vice versa, it'll lead to the same tweet/post. Usually when copying from the mobile app, it's X. When copying from the web, it's Twitter.
+	- **Mastodon**: Mastodon is decentralised, which makes it difficult to register by the plugin. You can add the [servers](https://joinmastodon.org/servers) of the posts you want to embed in the plugin settings under "Allowed Mastodon servers" - [mastodon.social](https://mastodon.social/) is supported by default.
+	  !Please note that you must use the link of the original server (_e.g._ mastodon.social/@user/1234 and not mstdn.social/@user@mastodon.social/1234)
 
-Please [send any issues](https://github.com/GnoxNahte/obsidian-auto-embed/issues) you found!
+Please [send any issues](https://github.com/Gilgamesh-Tamarian/obsidian-auto-embed-plus/issues) you found!
 
 ## Frequently asked questions
 ### The embed isn't appearing
 1. Have you [enabled the plugin](https://help.obsidian.md/Extending+Obsidian/Community+plugins#Enable+a+community+plugin)?
 2. Are you following this syntax? `![](link)`<br>
 	For example: `![](https://example.com)`
-3. If it still doesn't work, [create a post in Discussions](https://github.com/GnoxNahte/obsidian-auto-embed/discussions/categories/general) so I can help you
+3. If it still doesn't work, [create a post in Discussions](https://github.com/Gilgamesh-Tamarian/obsidian-auto-embed-plus/discussions/categories/general) so I can help you
 
 ## Contact Me
-I've just started Obsidian and this is my first plugin.<br>
-If you have any questions, feature requests, bugs or anything related to the plugin, feel free to [create an issue](https://github.com/GnoxNahte/obsidian-auto-embed/issues/new) or [submit a Google Form](https://forms.gle/xtuv4FVCKZ2tg9zK9). 
 
-Alternatively, you can [email](mailto:gnoxnahte.dev@gmail.com) me too.
-
-If this plugin helped you and want to support its development, please consider supporting me at [Ko-fi](https://ko-fi.com/gnoxnahtedev)
+I've just started Obsidian and this is pretty much the first plugin I've ever coded.<br>
+If you have any questions, feature requests, bugs or anything related to the plugin, feel free to [create an issue](https://github.com/Gilgamesh-Tamarian/obsidian-auto-embed-plus/issues/new)
+If this plugin helped you, you might consider supporting [the original creator](https://github.com/GnoxNahte) at [Ko-fi](https://ko-fi.com/gnoxnahtedev)
 
 ## Credits
-- Inspired by Sam Warnick's [Simple Embed](https://github.com/samwarnick/obsidian-simple-embeds). It was archived so I made my own plugin. Changed a lot of things from it though.
+- Improving upon GnoxNahte's [obsidian-auto-embed](https://github.com/GnoxNahte/obsidian-auto-embed), which was itself inspired by Sam Warnick's archived [Simple Embed](https://github.com/samwarnick/obsidian-simple-embeds).
