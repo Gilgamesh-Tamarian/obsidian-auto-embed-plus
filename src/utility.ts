@@ -5,7 +5,8 @@
  */
 export function setCssProps(el: HTMLElement, props: { [key: string]: string }) {
     for (const key in props) {
-        (el.style as any)[key] = props[key];
+        const cssKey = key.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`);
+        el.style.setProperty(cssKey, props[key]);
     }
 }
 export const regexUrl = /(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/gi

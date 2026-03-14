@@ -24,7 +24,7 @@ export class PreviewEmbedModal extends Modal {
 
     onOpen(): void {
         const {contentEl} = this;
-        this.titleEl.textContent = "Preview Embed";
+        this.titleEl.textContent = "Preview embed";
 
         // let linkText = this.plugin.getLinkText(this.url, this.options);
 
@@ -36,7 +36,7 @@ export class PreviewEmbedModal extends Modal {
         // Think Setting just helps create and insert the html into contentEl? Hopefully not doing anything else. Couldn't find any documentation about it.
 
         new Setting(contentEl)
-            .setName("Preview url")
+            .setName("Preview URL")
             .addText(text => text
                 .setValue(this.url)
                 .onChange((value) => {
@@ -49,7 +49,7 @@ export class PreviewEmbedModal extends Modal {
                 }));
 
         new Setting(contentEl)
-            .setName("Preview option")
+            .setName("Preview options")
             .addText(text => text
                 .setValue(this.options)
                 .onChange((value) => {

@@ -1,4 +1,4 @@
-import { Editor, EditorPosition, MarkdownFileInfo, MarkdownView, Plugin } from 'obsidian';
+import { Editor, EditorPosition, Plugin } from 'obsidian';
 import { AutoEmbedSettingTab, DEFAULT_SETTINGS, PluginSettings } from 'src/settings-tab';
 import SuggestEmbed from 'src/suggestEmbed';
 import { isLinkToImage, isURL, regexUrl } from 'src/utility';

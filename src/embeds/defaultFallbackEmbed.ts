@@ -55,7 +55,9 @@ export class DefaultFallbackEmbed extends EmbedBase {
                 else if (this.plugin.settings.fallbackAutoTitle) {
                     // Scrape the title and add it.
                     const link = createEl("a", {href: url, text: "Loading title..."});
-                    this.linkTitle(url).then(title => link.text = title);
+                    this.linkTitle(url)
+                        .then(title => link.text = title)
+                        .catch(() => link.text = url);
                     embedContainer.appendChild(link);
                 }
 

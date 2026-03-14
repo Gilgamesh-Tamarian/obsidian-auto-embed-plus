@@ -79,17 +79,17 @@ export abstract class EmbedBase {
         container.appendChild(embed);
         
         // Check if it links to an image:
-        requestUrl({url: link, method: "HEAD"}).then(res => {
+        void requestUrl({url: link, method: "HEAD"}).then(res => {
             // console.log(res);
             if (res.headers["content-type"].startsWith("image"))
             {
                 container.classList.add("auto-embed-hide-display");
                 container.parentElement?.removeChild(container);
             }
-        })
+        }).catch(() => undefined);
 
         if (embed.classList.contains("error-embed")) {
-            console.log("Container: " + embedData.embedContainer)
+            console.debug("Container:", embedData.embedContainer);
             return { 
                 embedData: embedData, 
                 containerEl: container,
@@ -273,13 +273,13 @@ export abstract class EmbedBase {
         const error = createEl("p", {cls: `${this.autoEmbedCssClass} error-embed`});
         error.setText(errorMsg);
 
-        console.log("auto-embed/error: " + errorMsg);
+        console.error("auto-embed/error: " + errorMsg);
         return error;
     }
 
     onNoInternetConnection(): HTMLElement {
-        console.log("auto-embed/error: no internet connection");
+        console.error("auto-embed/error: no internet connection");
 
-        return createEl("p", {cls: `${this.autoEmbedCssClass} embed-no-connection`, text: "No Internet Connection"});
+        return createEl("p", {cls: `${this.autoEmbedCssClass} embed-no-connection`, text: "No internet connection"});
     }
 }

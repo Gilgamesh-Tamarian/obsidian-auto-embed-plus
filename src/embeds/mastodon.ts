@@ -14,7 +14,7 @@ export class MastodonEmbed extends EmbedBase {
     https://mastodon.social/users/user/statuses/109382938239
     */
     regex = new RegExp(
-        /https:\/\/([^\/]+)\/(?:@([A-Za-z0-9_.-]+)\/(\d+)|users\/([A-Za-z0-9_.-]+)\/statuses\/(\d+))/
+        /https:\/\/([^/]+)\/(?:@([A-Za-z0-9_.-]+)\/(\d+)|users\/([A-Za-z0-9_.-]+)\/statuses\/(\d+))/
     );
 
 

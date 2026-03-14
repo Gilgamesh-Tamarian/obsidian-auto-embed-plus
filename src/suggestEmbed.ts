@@ -2,7 +2,7 @@ import AutoEmbedPlugin from "src/main";
 import { Editor, EditorPosition, EditorSuggest, EditorSuggestContext, EditorSuggestTriggerInfo, TFile } from "obsidian";
 
 class Suggestion {
-    static readonly embedLinkChoice = "Embed Link";
+    static readonly embedLinkChoice = "Embed link";
     static readonly cancelChoice = "Cancel";
     // static readonly choices = [this.embedLinkChoice, this.cancelChoice];
     choice: string;

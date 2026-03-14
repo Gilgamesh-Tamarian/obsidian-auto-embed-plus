@@ -121,13 +121,13 @@ export class AutoEmbedSettingTab extends PluginSettingTab {
                     newWebsites.forEach(
                         website => setting.enabledWebsites[website] = true
                     );
-                    plugin.saveSettings();
+                    void plugin.saveSettings();
                 }
 
             } else {
 
                 setting.enabledWebsites = ResetEnabledWebsites();
-                plugin.saveSettings();
+                void plugin.saveSettings();
 
             }
         }
@@ -173,7 +173,7 @@ export class AutoEmbedSettingTab extends PluginSettingTab {
         const previewTooltip = "Opens a modal to test embed links";
 
         new Setting(containerEl)
-            .setName("Preview Embed")
+            .setName("Preview embed")
             .setTooltip(previewTooltip)
             .addButton(btn => btn
                 .setButtonText("Preview")
@@ -239,7 +239,7 @@ export class AutoEmbedSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(containerEl)
-            .setName("Supported website")
+            .setName("Supported websites")
             .setHeading()
             .setDesc("Enable or disable embed support for specific websites");
 
@@ -265,7 +265,7 @@ export class AutoEmbedSettingTab extends PluginSettingTab {
         */
 
         new Setting(containerEl)
-            .setName("Mastodon Instances")
+            .setName("Mastodon instances")
             .setHeading()
             .setDesc("Enter Mastodon servers that should be recognized as Mastodon embeds (one per line).\n\nNote: mastodon.social is always allowed regardless of settings");
 
@@ -295,8 +295,8 @@ export class AutoEmbedSettingTab extends PluginSettingTab {
             });
 
         new Setting(containerEl)
-            .setName("Mastodon Default Embed Height")
-            .setDesc("Set the default height (in px) for Mastodon embeds. Standard Default: 750.\n\nA larger default height is necessary to correctly render longer posts, but will result in excessive space for smaller posts. You can manually adjust the height for individual embeds if needed.")
+            .setName("Mastodon default embed height")
+            .setDesc("Set the default height (in px) for Mastodon embeds. Standard default: 750.\n\nA larger default height is necessary to correctly render longer posts, but will result in excessive space for smaller posts. You can manually adjust the height for individual embeds if needed.")
             .addText(text => {
                 text.setValue(settings.mastodonDefaultHeight)
                     .onChange(async value => {
@@ -309,7 +309,7 @@ export class AutoEmbedSettingTab extends PluginSettingTab {
 
         additionalInfo.appendText("All values use ");
         additionalInfo.appendChild(createEl("a", {
-            text: "CSS Units",
+            text: "CSS units",
             href: "https://developer.mozilla.org/en-US/docs/Learn/CSS/Building_blocks/Values_and_units#numbers_lengths_and_percentages"
         }));
 
