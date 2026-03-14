@@ -1,6 +1,7 @@
 import AutoEmbedPlugin from "src/main";
 import { App, PluginSettingTab, Setting } from "obsidian";
 import { PreviewEmbedModal } from "src/preview-embed-modal";
+import { setCssProps } from "./utility";
 
 export enum FallbackOptions {
     ShowErrorMessage,
@@ -157,12 +158,16 @@ export class AutoEmbedSettingTab extends PluginSettingTab {
 
         function AddPadding(setting: Setting, addBottomBorder = false) {
 
-            setting.settingEl.style.paddingLeft = "2em";
-            setting.settingEl.style.borderLeft = "1px solid var(--background-modifier-border)";
+                setCssProps(setting.settingEl, {
+                    paddingLeft: "2em",
+                    borderLeft: "1px solid var(--background-modifier-border)"
+                });
 
-            if (addBottomBorder)
-                setting.settingEl.style.borderBottom =
-                    "1px solid var(--background-modifier-border)";
+                if (addBottomBorder) {
+                    setCssProps(setting.settingEl, {
+                        borderBottom: "1px solid var(--background-modifier-border)"
+                    });
+                }
         }
 
         const previewTooltip = "Opens a modal to test embed links";
