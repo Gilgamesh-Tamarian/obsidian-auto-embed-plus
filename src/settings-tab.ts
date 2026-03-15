@@ -267,7 +267,7 @@ export class AutoEmbedSettingTab extends PluginSettingTab {
         new Setting(containerEl)
             .setName("Mastodon instances")
             .setHeading()
-            .setDesc("Enter Mastodon servers that should be recognized as Mastodon embeds (one per line).\n\nNote: mastodon.social is always allowed regardless of settings");
+            .setDesc("Enter Mastodon servers that should be recognized as Mastodon embeds (one per line). \nNote: mastodon.social is always allowed regardless of settings");
 
         new Setting(containerEl)
             .setName("Allowed Mastodon servers")
@@ -324,7 +324,7 @@ export class AutoEmbedSettingTab extends PluginSettingTab {
 
         additionalInfo.appendChild(createEl("a", {
             text: "Create a GitHub issue",
-            href: "https://github.com/GnoxNahte/obsidian-auto-embed/issues/new"
+            href: "https://github.com/Gilgamesh-Tamarian/obsidian-auto-embed-plus/issues/new"
         }));
 
         new Setting(containerEl)
