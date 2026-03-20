@@ -267,15 +267,15 @@ export class AutoEmbedSettingTab extends PluginSettingTab {
         new Setting(containerEl)
             .setName("Mastodon instances")
             .setHeading()
-            .setDesc("Enter Mastodon servers that should be recognized as Mastodon embeds (one per line). \nNote: mastodon.social is always allowed regardless of settings");
+            .setDesc("Enter mastodon servers that should be recognized as embeds (one per line). \nNote: mastodon.social is always allowed regardless of settings");
 
         new Setting(containerEl)
-            .setName("Allowed Mastodon servers")
+            .setName("Allowed mastodon servers")
             .addTextArea(text => {
 
                 text
                     .setPlaceholder(
-                        "e.g. social.vivaldi.net\nlgbtqia.space\npiaille.fr"
+                        "E.g. social.vivaldi.net\nlgbtqia.space\npiaille.fr"
                     )
                     .setValue(settings.mastodonInstances.join("\n"))
                     .onChange(async value => {
@@ -296,7 +296,7 @@ export class AutoEmbedSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName("Mastodon default embed height")
-            .setDesc("Set the default height (in px) for Mastodon embeds. Standard default: 750.\n\nA larger default height is necessary to correctly render longer posts, but will result in excessive space for smaller posts. You can manually adjust the height for individual embeds if needed.")
+            .setDesc("Set the default height (in px) for mastodon embeds. Standard default: 750.\n\nA larger default height is necessary to correctly render longer posts, but will result in excessive space for smaller posts. You can manually adjust the height for individual embeds if needed.")
             .addText(text => {
                 text.setValue(settings.mastodonDefaultHeight)
                     .onChange(async value => {
