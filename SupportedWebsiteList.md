@@ -1,5 +1,5 @@
-# obsidian-auto-embed
-[Obsidian](https://obsidian.md/) plugin to help embed links automatically instead of using iframes
+# I link therefore iframe
+[Obsidian](https://obsidian.md/) plugin to convert URLs into native iframe embeds and auto-format embeddables
 
 ## Supported website list
 This is a list of supported websites with some examples. Websites with a `*` means it has some sort of limitation. See [Current Limitations & Known Bugs](README.md/#current-limitations--known-bugs) for more info

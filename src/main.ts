@@ -1,19 +1,17 @@
-import { Editor, EditorPosition, Plugin } from 'obsidian';
+import { Editor, EditorPosition, MarkdownView, Menu, Notice, Plugin } from 'obsidian';
 import { AutoEmbedSettingTab, DEFAULT_SETTINGS, PluginSettings } from 'src/settings-tab';
-import SuggestEmbed from 'src/suggestEmbed';
-import { isLinkToImage, isURL, regexUrl } from 'src/utility';
-import { embedField } from './embed-state-field';
+import {
+	isLinkToImage,
+	isURL,
+	resolveSocialMediaImageUrl,
+	saveImageUrlToVault,
+	saveGoogleDocToVault,
+} from 'src/utility';
+import { QuizletBulkUpdateResult, saveQuizletSetToVault, updateAllQuizletSetsFromStoredSources } from 'src/utils/quizlet.utils';
 import { EmbedManager } from './embeds/embedManager';
-
-class PasteInfo {
-	trigger: boolean;
-	text: string;
-
-	constructor(trigger: boolean, text: string) {
-		this.trigger = trigger;
-		this.text = text;
-	}
-}
+import { getIframe } from './utils/iframe_generator.utils';
+import { ConfigureIframeModal } from './configure_iframe_modal';
+import { buildNativeEmbedMarkup } from './utils/native_embed_markup.utils';
 
 interface Selection {
 	start: EditorPosition
@@ -23,8 +21,6 @@ interface Selection {
 
 export default class AutoEmbedPlugin extends Plugin {
 	settings: PluginSettings;
-	isShiftDown = false;
-	pasteInfo: PasteInfo = new PasteInfo(false, "");
 
 	async onload() {
 
@@ -33,44 +29,29 @@ export default class AutoEmbedPlugin extends Plugin {
 		const embedManager = EmbedManager.Instance;
 		embedManager.init(this);
 
-		this.registerEditorExtension(embedField);
-
 		this.addSettingTab(new AutoEmbedSettingTab(this.app, this));
 
-		this.registerDomEvent(document, "keydown", (e) => {
-			if (e.shiftKey)
-				this.isShiftDown = true;
-		});
-
-		this.registerDomEvent(document, "keydown", (e) => {
-			if (!e.shiftKey)
-				this.isShiftDown = false;
-		});
-
-		if (this.settings.suggestEmbed)
-			this.registerSuggest();
-
-		this.registerEvent(
-			this.app.workspace.on("editor-paste", this.onPaste.bind(this))
-		);
-
-		this.registerMarkdownPostProcessor((el) => {
-
-			const images = el.querySelectorAll('img');
-
-			images.forEach((image) => {
-
-				if (
-					image.referrerPolicy !== "no-referrer" ||
-					!isURL(image.src) ||
-					isLinkToImage(image.src)
-				)
+		this.registerEvent(this.app.workspace.on(
+			"editor-menu",
+			(menu: Menu, editor: Editor, _view: MarkdownView) => {
+				const selection = this.getSelection(editor);
+				if (!selection)
 					return;
 
-				this.handleImage(image);
+				const url = selection.text.trim();
+				if (!isURL(url))
+					return;
 
-			});
-		});
+				menu.addItem((item) => {
+					item
+						.setTitle("Convert URL to embed")
+						.setIcon("create-new")
+						.onClick(() => {
+							this.markToEmbed(selection, editor);
+						});
+				});
+			}
+		));
 
 		/*
 		UPDATED MESSAGE HANDLER
@@ -101,48 +82,28 @@ export default class AutoEmbedPlugin extends Plugin {
 		});
 
 		this.addCommand({
-			id: "auto-embed-add-embed",
-			name: "Add embed",
-			editorCallback: (editor: Editor) => {
+			id: "create-embed",
+			name: "Create embed",
+			editorCheckCallback: (checking: boolean, editor: Editor) => {
+				const selection = this.getSelection(editor);
+				const isValidSelection = !!selection && isURL(selection.text.trim());
 
-				const cursorPos = editor.getCursor();
+				if (checking)
+					return isValidSelection;
 
-				editor.replaceRange("![]()", cursorPos, cursorPos);
+				if (!selection || !isValidSelection)
+					return false;
 
-				cursorPos.ch += 4;
-
-				editor.setCursor(cursorPos);
-
+				this.markToEmbed(selection, editor);
 				return true;
 			},
 		});
 
 		this.addCommand({
-			id: "auto-embed-mark-to-embed",
-			name: "Mark to embed",
-			editorCheckCallback: (checking: boolean, editor: Editor) => {
-
-				const selection = this.getLinkSelection(editor);
-
-				if (checking)
-					return selection !== null;
-
-				if (selection) {
-
-					editor.replaceRange(
-						`![](${selection.text})`,
-						selection.start,
-						selection.end
-					);
-
-					const newCursorPos = selection.end;
-
-					newCursorPos.ch += 4;
-
-					editor.setCursor(newCursorPos);
-
-				}
-
+			id: "migrate-legacy-embeds-in-note",
+			name: "Migrate legacy embeds in current note",
+			editorCallback: (editor: Editor) => {
+				void this.migrateLegacyEmbedsInCurrentNote(editor);
 				return true;
 			},
 		});
@@ -158,60 +119,14 @@ export default class AutoEmbedPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
-	private onPaste(e: ClipboardEvent, editor: Editor) {
-
-		if (e.defaultPrevented)
-			return;
-
-		if (this.isShiftDown)
-			return;
-
-		const clipboardData = e.clipboardData?.getData("text/plain");
-
-		if (!clipboardData || !isURL(clipboardData))
-			return;
-
-		this.pasteInfo.trigger = true;
-		this.pasteInfo.text = clipboardData;
-	}
-
-	handleImage(img: HTMLImageElement): HTMLElement | null {
-
-		const alt = img.alt;
-
-		const noEmbedRegex = /noembed/i;
-
-		if (noEmbedRegex.test(alt)) {
-			img.alt = alt.replace(noEmbedRegex, "");
-			return null;
-		}
-
-		const src = img.src;
-
-		const embedData = EmbedManager.getEmbedData(src, alt);
-
-		if (embedData === null)
-			return null;
-
-		const embedResult = embedData.embedSource.create(src, embedData);
-
-		embedData.embedSource.applyModifications(embedResult, embedData);
-
-		const parent = img.parentElement;
-
-		parent?.appendChild(embedResult.containerEl);
-
-		img.classList.add("auto-embed-hide-display");
-
-		img.addEventListener("load", () => {
-
-			img.classList.remove("auto-embed-hide-display");
-
-			embedResult.containerEl.classList.add("auto-embed-hide-display");
-
-		});
-
-		return embedResult.containerEl;
+	async updateAllSavedQuizletCards(): Promise<QuizletBulkUpdateResult> {
+		return await updateAllQuizletSetsFromStoredSources(
+			this.app.vault,
+			this.settings.quizletFolderPath,
+			this.settings.saveQuizletAsSeparateNotes,
+			this.settings.saveQuizletImagesToVault,
+			this.settings.debug,
+		);
 	}
 
 	private getSelection(editor: Editor): Selection | null {
@@ -226,49 +141,193 @@ export default class AutoEmbedPlugin extends Plugin {
 		};
 	}
 
-	getLinkSelection(editor: Editor): Selection | null {
+	markToEmbed(selection: Selection, editor: Editor) {
+		void this.insertEmbed(selection, editor);
+	}
 
-		const cursor = editor.getCursor();
+	private async getFallbackIframeMarkup(url: string): Promise<string> {
+		return await getIframe(url);
+	}
 
-		const lineText = editor.getLine(cursor.line);
+	async generateEmbedMarkup(url: string, alt: string): Promise<string> {
+		const embedData = EmbedManager.getEmbedData(url, alt);
+		let rawMarkup: string;
 
-		const matchedLinks = lineText.matchAll(regexUrl);
+		if (embedData === null) {
+			rawMarkup = await this.getFallbackIframeMarkup(url);
+			return buildNativeEmbedMarkup(rawMarkup, url, this.settings.showOriginalLink);
+		}
 
-		for (const match of matchedLinks) {
+		if (embedData.embedSource === EmbedManager.Instance.defaultFallbackEmbed) {
+			rawMarkup = await this.getFallbackIframeMarkup(url);
+			return buildNativeEmbedMarkup(rawMarkup, url, this.settings.showOriginalLink);
+		}
 
-			if (
-				match.index &&
-				match.index <= cursor.ch &&
-				match.index + match[0].length >= cursor.ch
-			) {
+		const isValidated = await embedData.embedSource.validateUrl(url);
+		if (!isValidated) {
+			if (this.settings.debug) {
+				console.warn("[I link therefore iframe] Provider validation failed, falling back to generic iframe:", url);
+			}
 
-				return {
-					start: {
-						line: cursor.line,
-						ch: match.index
-					},
-					end: {
-						line: cursor.line,
-						ch: match.index + match[0].length
-					},
-					text: match[0]
-				};
+			rawMarkup = await this.getFallbackIframeMarkup(url);
+			return buildNativeEmbedMarkup(rawMarkup, url, this.settings.showOriginalLink);
+		}
+
+		const embedResult = embedData.embedSource.create(url, embedData, true);
+		embedData.embedSource.applyModifications(embedResult, embedData);
+		rawMarkup = embedResult.containerEl.outerHTML;
+
+		return buildNativeEmbedMarkup(rawMarkup, url, this.settings.showOriginalLink);
+	}
+
+	private async insertEmbed(selection: Selection, editor: Editor): Promise<void> {
+		const originalUrl = selection.text.trim();
+		let embedUrl = originalUrl;
+
+		if (this.settings.saveImagesToVault) {
+			if (this.settings.saveSocialMediaImagesToVault) {
+				const resolvedSocialImageUrl = await resolveSocialMediaImageUrl(
+					originalUrl,
+					this.settings.debug,
+				);
+
+				if (resolvedSocialImageUrl) {
+					// Save first social media attachment while preserving the embed URL in the note.
+					await saveImageUrlToVault(
+						resolvedSocialImageUrl,
+						this.app.vault,
+						this.settings.imageFolderPath,
+						this.settings.debug,
+					);
+
+					if (this.settings.debug) {
+						console.log("[I link therefore iframe] Saved social media image and kept embed URL:", originalUrl);
+					}
+				} else {
+					embedUrl = await saveImageUrlToVault(
+						embedUrl,
+						this.app.vault,
+						this.settings.imageFolderPath,
+						this.settings.debug,
+					);
+				}
+			} else {
+				embedUrl = await saveImageUrlToVault(
+					embedUrl,
+					this.app.vault,
+					this.settings.imageFolderPath,
+					this.settings.debug,
+				);
 			}
 		}
 
-		return null;
+		if (this.settings.saveGoogleDocsToVault) {
+			await saveGoogleDocToVault(
+				originalUrl,
+				this.app.vault,
+				this.settings.googleDocsFolderPath,
+				this.settings.debug,
+			);
+		}
+
+		if (this.settings.saveQuizletCardsToVault) {
+			const quizletExportResult = await saveQuizletSetToVault(
+				originalUrl,
+				this.app.vault,
+				this.settings.quizletFolderPath,
+				this.settings.saveQuizletAsSeparateNotes,
+				this.settings.saveQuizletImagesToVault,
+				this.settings.debug,
+			);
+
+			if (this.settings.debug && quizletExportResult.status !== "not-quizlet") {
+				if (quizletExportResult.status === "saved") {
+					new Notice(`[I link therefore iframe] Quizlet export saved to ${quizletExportResult.filePath ?? "vault"}`);
+				} else if (quizletExportResult.status === "updated") {
+					new Notice(`[I link therefore iframe] Quizlet export updated: +${quizletExportResult.createdCount ?? 0}, ~${quizletExportResult.updatedCount ?? 0}, =${quizletExportResult.unchangedCount ?? 0}`);
+				} else if (quizletExportResult.status === "unchanged") {
+					new Notice(`[I link therefore iframe] Quizlet cards unchanged (${quizletExportResult.unchangedCount ?? quizletExportResult.cardCount ?? 0})`);
+				} else if (quizletExportResult.status === "no-cards") {
+					new Notice("[I link therefore iframe] Quizlet export failed: no card data found on page");
+				} else if (quizletExportResult.status === "not-html") {
+					new Notice("[I link therefore iframe] Quizlet export skipped: URL did not return HTML");
+				} else if (quizletExportResult.status === "error") {
+					new Notice("[I link therefore iframe] Quizlet export failed due to request or parsing error");
+				}
+			}
+		}
+
+		if (isLinkToImage(embedUrl) || !isURL(embedUrl)) {
+			const imageMarkdown = `![](${embedUrl})`;
+
+			editor.replaceRange(
+				imageMarkdown,
+				selection.start,
+				selection.end
+			);
+
+			editor.setCursor({
+				line: selection.start.line,
+				ch: selection.start.ch + imageMarkdown.length,
+			});
+			return;
+		}
+
+		try {
+			const embedMarkup = await this.generateEmbedMarkup(embedUrl, "");
+
+			editor.setSelection(selection.start, selection.end);
+
+			new ConfigureIframeModal(this.app, embedMarkup, editor).open();
+		} catch (e) {
+			new Notice("Unable to convert this URL into an embed.");
+			if (this.settings.debug) {
+				console.error("[I link therefore iframe] Failed to generate embed markup", e);
+			}
+		}
 	}
 
-	markToEmbed(selection: Selection, editor: Editor) {
+	private async migrateLegacyEmbedsInCurrentNote(editor: Editor): Promise<void> {
+		const lineCount = editor.lineCount();
+		const legacyEmbedRegex = /!\[(.*?)\]\((https?:\/\/[^\s)]+)\)/g;
+		let migratedCount = 0;
 
-		editor.replaceRange(
-			`![](${selection.text})`,
-			selection.start,
-			selection.end
-		);
+		for (let lineIndex = lineCount - 1; lineIndex >= 0; lineIndex--) {
+			const lineText = editor.getLine(lineIndex);
+			const matches = Array.from(lineText.matchAll(legacyEmbedRegex));
+
+			if (matches.length === 0)
+				continue;
+
+			for (let matchIndex = matches.length - 1; matchIndex >= 0; matchIndex--) {
+				const match = matches[matchIndex];
+				const fullMatch = match[0];
+				const alt = (match[1] ?? "").trim();
+				const url = (match[2] ?? "").trim();
+				const start = match.index;
+
+				if (start === undefined || !isURL(url) || isLinkToImage(url))
+					continue;
+
+				try {
+					const embedMarkup = await this.generateEmbedMarkup(url, alt);
+
+					editor.replaceRange(
+						embedMarkup,
+						{ line: lineIndex, ch: start },
+						{ line: lineIndex, ch: start + fullMatch.length },
+					);
+
+					migratedCount++;
+				} catch (e) {
+					if (this.settings.debug) {
+						console.error("[I link therefore iframe] Failed migrating legacy embed", { url, error: e });
+					}
+				}
+			}
+		}
+
+		new Notice(`I link therefore iframe: migrated ${migratedCount} legacy embeds.`);
 	}
 
-	registerSuggest() {
-		this.registerEditorSuggest(new SuggestEmbed(this));
-	}
 }

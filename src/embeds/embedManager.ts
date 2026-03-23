@@ -1,20 +1,14 @@
 import AutoEmbedPlugin from "src/main";
 import { BaseEmbedData, EmbedBase } from "./embedBase";
-import { TwitterEmbed } from "./twitter";
-import { RedditEmbed } from "./reddit";
-import { SteamEmbed } from "./steam";
-import { CodepenEmbed } from "./codepen";
-import { SpotifyEmbed } from "./spotify";
-import { ImgurEmbed } from "./imgur";
+import { TwitterEmbed, MastodonEmbed, ThreadsEmbed } from "./microblogging";
+import { RedditEmbed, InstagramEmbed, TikTokEmbed, FacebookEmbed, PinterestEmbed, TelegramEmbed } from "./social";
+import { SteamEmbed, ImgurEmbed, GoogleCalendarEmbed, WikipediaEmbed, GeogebraEmbed, QuizletEmbed } from "./misc";
+import { CodepenEmbed, GoogleDocsEmbed, GoogleDriveEmbed } from "./devdocs";
+import { SoundCloudEmbed, SpotifyEmbed, AppleMusicEmbed, TidalEmbed, DeezerEmbed } from "./media";
+import { GoogleMapsEmbed, OpenStreetMapEmbed } from "./maps";
 import { DefaultFallbackEmbed } from "./defaultFallbackEmbed";
-import { GoogleDocsEmbed } from "./googleDocs";
-import { TikTokEmbed } from "./tiktok";
-import { SoundCloudEmbed } from "./soundcloud";
-import { SupportedWebsites } from "src/settings-tab";
 import { apiVersion } from "obsidian";
-import { InstagramEmbed } from "./instagram";
-import { MastodonEmbed } from "./mastodon";
-// import { YouTubeEmbed } from "./youtube";
+import { YouTubeEmbed, VimeoEmbed, DailymotionEmbed, VKVideoEmbed, TwitchEmbed } from "./video";
 
 export class EmbedManager {
     // Singleton
@@ -36,25 +30,41 @@ export class EmbedManager {
         this.plugin = plugin;
         // Add any new embeds here
         this.embedSources = [
-            // new YouTubeEmbed(plugin),
+            new YouTubeEmbed(plugin),
+            new VimeoEmbed(plugin),
+            new DailymotionEmbed(plugin),
+            new VKVideoEmbed(plugin),
+            new TwitchEmbed(plugin),
             new RedditEmbed(plugin),
             new SteamEmbed(plugin),
+            new GoogleCalendarEmbed(plugin),
+            new WikipediaEmbed(plugin),
+            new GeogebraEmbed(plugin),
+            new QuizletEmbed(plugin),
+            new GoogleMapsEmbed(plugin),
+            new OpenStreetMapEmbed(plugin),
             new CodepenEmbed(plugin),
+            new GoogleDriveEmbed(plugin),
             new SpotifyEmbed(plugin),
+            new AppleMusicEmbed(plugin),
+            new TidalEmbed(plugin),
+            new DeezerEmbed(plugin),
             new ImgurEmbed(plugin),
             new GoogleDocsEmbed(plugin),
             new TikTokEmbed(plugin),
             new SoundCloudEmbed(plugin),
             new InstagramEmbed(plugin),
+            new FacebookEmbed(plugin),
+            new PinterestEmbed(plugin),
+            new TelegramEmbed(plugin),
 			new MastodonEmbed(plugin),
+            new ThreadsEmbed(plugin),
 
         ];
 
-        // Having some trouble replacing the embedded web pages from Obsidian. 
-        // So remove YouTube and Twitter (Keep "TwitterEmbed" for x.com though, since Obsidian doesn't embed those)
+        // Keep Twitter handling compatible with Obsidian's native support split.
         this.ignoredDomains = [
-            // Ignore embeds for youtube and twtiter
-            new RegExp(/(?:https?:\/\/)?(?:www\.)?youtu(?:\.be\/|be.com\/)/)
+            // Intentionally empty for now.
         ];
 
 
@@ -96,13 +106,6 @@ export class EmbedManager {
         const embedSource = this._instance.embedSources.find((source) => {
             return source.regex.test(url);
         }) ?? this._instance.defaultFallbackEmbed;
-
-        // TODO: Consider moving this up. If it's at the start, need to get the top level domain then filter the websites. 
-        //       Skips any regex and other checks too
-        const isWebsiteEnabled = !this._instance.plugin.settings.enabledWebsites[embedSource.name as SupportedWebsites];
-        if (embedSource !== this._instance.defaultFallbackEmbed && isWebsiteEnabled) {
-            return null;
-        }
 
         const options = embedSource.getOptions(alt);
 

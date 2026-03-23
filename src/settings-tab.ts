@@ -1,19 +1,7 @@
 import AutoEmbedPlugin from "src/main";
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import { PreviewEmbedModal } from "src/preview-embed-modal";
 import { setCssProps } from "./utility";
-
-export enum FallbackOptions {
-    ShowErrorMessage,
-    EmbedLink,
-    Hide,
-}
-
-export enum GoogleDocsViewOptions {
-    Preview,
-    EditMinimal,
-    EditDefault,
-}
 
 export enum PreloadOptions {
     None,
@@ -27,68 +15,72 @@ const supportedWebsites = [
     "Reddit",
     "CodePen",
     "Google Docs",
+    "Google Drive",
+    "Google Calendar",
+    "Google Maps",
+    "Wikipedia",
+    "Geogebra",
+    "Quizlet",
+    "OpenStreetMap",
     "SoundCloud",
     "Spotify",
+    "Apple Music",
+    "Tidal",
+    "Deezer",
     "Steam",
+    "YouTube",
+    "Vimeo",
+    "Dailymotion",
+    "VK Video",
+    "Twitch",
     "TikTok",
     "Instagram",
-    "Mastodon"
+    "Facebook",
+    "Pinterest",
+    "Telegram",
+    "Mastodon",
+    "Threads",
 ] as const;
 
 export type SupportedWebsites = (typeof supportedWebsites)[number];
-
-export type SupportedWebsitesMap = {
-    [key in SupportedWebsites]: boolean
-};
 
 export interface PluginSettings {
 
     // General
     darkMode: boolean;
     preloadOption: PreloadOptions;
-    suggestEmbed: boolean;
+    showOriginalLink: boolean;
 
-    enabledWebsites: SupportedWebsitesMap;
-
-    // Mastodon instances
-    mastodonInstances: string[];
-    // Mastodon default embed height
-    mastodonDefaultHeight: string;
-
-    // Google Docs
-    googleDocsViewOption: GoogleDocsViewOptions;
-
-    // Fallback
-    fallbackOptions: FallbackOptions;
-    fallbackWidth: string;
-    fallbackHeight: string;
-    fallbackDefaultLink: string;
-    fallbackAutoTitle: boolean;
+    // Download from embed
+    saveImagesToVault: boolean;
+    saveSocialMediaImagesToVault: boolean;
+    imageFolderPath: string;
+    googleDocsFolderPath: string;
+    saveGoogleDocsToVault: boolean;
+    saveQuizletCardsToVault: boolean;
+    saveQuizletImagesToVault: boolean;
+    saveQuizletAsSeparateNotes: boolean;
+    quizletFolderPath: string;
 
     // Advanced
-    showAdvancedSettings: boolean;
     debug: boolean;
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
     darkMode: true,
     preloadOption: PreloadOptions.Placeholder,
-    suggestEmbed: true,
+    showOriginalLink: true,
 
-    enabledWebsites: ResetEnabledWebsites(),
+    saveImagesToVault: false,
+    saveSocialMediaImagesToVault: false,
+    imageFolderPath: "linked-iframe-images",
+    googleDocsFolderPath: "linked-iframe-docs",
+    saveGoogleDocsToVault: false,
+    saveQuizletCardsToVault: false,
+    saveQuizletImagesToVault: false,
+    saveQuizletAsSeparateNotes: false,
+    quizletFolderPath: "linked-iframe-quizlet",
 
-    mastodonInstances: [],
-    mastodonDefaultHeight: "1000",
-
-    googleDocsViewOption: GoogleDocsViewOptions.Preview,
-
-    fallbackOptions: FallbackOptions.EmbedLink,
-    fallbackWidth: "100%",
-    fallbackHeight: "500px",
-    fallbackDefaultLink: "Link",
-    fallbackAutoTitle: true,
-
-    showAdvancedSettings: false,
     debug: false,
 }
 
@@ -108,31 +100,6 @@ export class AutoEmbedSettingTab extends PluginSettingTab {
         const settings = plugin.settings;
 
         containerEl.empty();
-
-        function ValidateSettings(setting: PluginSettings, plugin: AutoEmbedPlugin) {
-
-            if (setting.enabledWebsites && Object.keys(setting.enabledWebsites).length > 0) {
-
-                const newWebsites = supportedWebsites.filter(
-                    website => setting.enabledWebsites[website] === undefined
-                );
-
-                if (newWebsites.length > 0) {
-                    newWebsites.forEach(
-                        website => setting.enabledWebsites[website] = true
-                    );
-                    void plugin.saveSettings();
-                }
-
-            } else {
-
-                setting.enabledWebsites = ResetEnabledWebsites();
-                void plugin.saveSettings();
-
-            }
-        }
-
-        ValidateSettings(settings, plugin);
 
         function EnumToRecord<T extends {[key: number]: string | number}>(e: T): Record<string, string>  {
 
@@ -156,19 +123,25 @@ export class AutoEmbedSettingTab extends PluginSettingTab {
             return recordOutput;
         }
 
-        function AddPadding(setting: Setting, addBottomBorder = false) {
+        function createCollapsibleSection(title: string, description: string): HTMLElement {
+            const details = containerEl.createEl("details");
+            details.classList.add("auto-embed-settings-section");
 
-                setCssProps(setting.settingEl, {
-                    paddingLeft: "2em",
-                    borderLeft: "1px solid var(--background-modifier-border)"
-                });
+            const summary = details.createEl("summary");
+            summary.classList.add("auto-embed-settings-section-summary");
+            summary.setText(title);
 
-                if (addBottomBorder) {
-                    setCssProps(setting.settingEl, {
-                        borderBottom: "1px solid var(--background-modifier-border)"
-                    });
-                }
+            const desc = details.createDiv("auto-embed-settings-section-desc");
+            desc.setText(description);
+
+            return details.createDiv("auto-embed-settings-section-content");
         }
+
+        function addVisualDivider(parent: HTMLElement): void {
+            parent.createEl("hr", { cls: "auto-embed-settings-divider" });
+        }
+
+        // ── General settings ──────────────────────────────────────────────────
 
         const previewTooltip = "Opens a modal to test embed links";
 
@@ -223,119 +196,204 @@ export class AutoEmbedSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(containerEl)
-            .setName("Suggest embed")
-            .setDesc("Suggest embedding when pasting a link")
+            .setName("Show original link under embed")
+            .setDesc("Display an \"Open original link\" footer below generated embeds")
             .addToggle(toggle => toggle
-                .setValue(settings.suggestEmbed)
+                .setValue(settings.showOriginalLink)
                 .onChange(async value => {
 
-                    settings.suggestEmbed = value;
+                    settings.showOriginalLink = value;
+                    await plugin.saveSettings();
 
-                    if (value)
-                        plugin.registerSuggest();
+                }));
 
+        addVisualDivider(containerEl);
+
+        // ── Generic download settings ──────────────────────────────────────────
+
+        new Setting(containerEl)
+            .setName("Save image embeds to vault")
+            .setDesc("Download direct image URLs and replace embed links with local vault files")
+            .addToggle(toggle => toggle
+                .setValue(settings.saveImagesToVault)
+                .onChange(async value => {
+
+                    settings.saveImagesToVault = value;
                     await plugin.saveSettings();
 
                 }));
 
         new Setting(containerEl)
-            .setName("Supported websites")
-            .setHeading()
-            .setDesc("Enable or disable embed support for specific websites");
+            .setName("Save social media images to vault")
+            .setDesc("For supported platforms (Instagram, Facebook, Pinterest, Telegram, Mastodon, Reddit, TikTok, Imgur, SoundCloud, Spotify, CodePen, Steam), fetch the first available media image and save it locally")
+            .addToggle(toggle => toggle
+                .setValue(settings.saveSocialMediaImagesToVault)
+                .onChange(async value => {
 
-        for (const website in settings.enabledWebsites) {
+                    settings.saveSocialMediaImagesToVault = value;
+                    await plugin.saveSettings();
 
-            const websiteSetting =
-                new Setting(containerEl)
-                    .setName(website)
-                    .addToggle(toggle => toggle
-                        .setValue(settings.enabledWebsites[website as SupportedWebsites])
-                        .onChange(async value => {
-
-                            settings.enabledWebsites[website as SupportedWebsites] = value;
-                            await plugin.saveSettings();
-
-                        }));
-
-            AddPadding(websiteSetting, true);
-        }
-
-        /*
-        Mastodon instance settings
-        */
+                }));
 
         new Setting(containerEl)
-            .setName("Mastodon instances")
-            .setHeading()
-            .setDesc("Enter mastodon servers that should be recognized as embeds (one per line). \nNote: mastodon.social is always allowed regardless of settings");
+            .setName("Save Google Docs to vault")
+            .setDesc("Download a local Markdown copy of the document when embedding a Google Doc (requires the document to be shared with anyone with the link)")
+            .addToggle(toggle => toggle
+                .setValue(settings.saveGoogleDocsToVault)
+                .onChange(async value => {
+
+                    settings.saveGoogleDocsToVault = value;
+                    await plugin.saveSettings();
+
+                }));
 
         new Setting(containerEl)
-            .setName("Allowed mastodon servers")
-            .addTextArea(text => {
+            .setName("Image folder path")
+            .setDesc("Folder inside your vault used for downloaded image content")
+            .addText(text => text
+                .setPlaceholder("linked-iframe-images")
+                .setValue(settings.imageFolderPath)
+                .onChange(async value => {
 
-                text
-                    .setPlaceholder(
-                        "E.g. social.vivaldi.net\nlgbtqia.space\npiaille.fr"
-                    )
-                    .setValue(settings.mastodonInstances.join("\n"))
-                    .onChange(async value => {
+                    settings.imageFolderPath = value.trim() || "linked-iframe-images";
+                    await plugin.saveSettings();
 
-                        settings.mastodonInstances =
-                            value
-                                .split("\n")
-                                .map(v => v.trim())
-                                .filter(v => v.length > 0);
+                }));
 
-                        await plugin.saveSettings();
+        new Setting(containerEl)
+            .setName("Google Docs folder path")
+            .setDesc("Folder inside your vault used for downloaded Google Docs Markdown files")
+            .addText(text => text
+                .setPlaceholder("linked-iframe-docs")
+                .setValue(settings.googleDocsFolderPath)
+                .onChange(async value => {
 
+                    settings.googleDocsFolderPath = value.trim() || "linked-iframe-docs";
+                    await plugin.saveSettings();
+
+                }));
+
+        addVisualDivider(containerEl);
+
+        // ── Quizlet settings (collapsible) ────────────────────────────────────
+
+        const quizletContent = createCollapsibleSection(
+            "Quizlet",
+            "Configure Quizlet card exports and update behavior"
+        );
+
+        const quizletModeDescription = new DocumentFragment();
+        quizletModeDescription.appendText("When enabled, create one folder per set and one Markdown note per card for ");
+        quizletModeDescription.appendChild(createEl("a", {
+            text: "Yanki",
+            href: "obsidian://show-plugin?id=yanki",
+        }));
+        quizletModeDescription.appendText(" compatibility. When disabled, save one Markdown file per Quizlet set using the older export format.");
+
+        const quizletSaveDescription = new DocumentFragment();
+        quizletSaveDescription.appendText("Best-effort export of public Quizlet flashcards to local Markdown when card data is accessible. ");
+        quizletSaveDescription.appendChild(createEl("strong", { text: "Performance warning:" }));
+        quizletSaveDescription.appendText(" this setting has general plugin performance implications, and will especially cause stutter when embedding larger Quizlet sets.");
+
+        new Setting(quizletContent)
+            .setName("Save Quizlet cards to vault")
+            .setDesc(quizletSaveDescription)
+            .addToggle(toggle => toggle
+                .setValue(settings.saveQuizletCardsToVault)
+                .onChange(async value => {
+
+                    settings.saveQuizletCardsToVault = value;
+                    await plugin.saveSettings();
+
+                }));
+
+        new Setting(quizletContent)
+            .setName("Quizlet: save card images to vault")
+            .setDesc("When enabled, download card images found in Quizlet sets and embed them locally in exported notes")
+            .addToggle(toggle => toggle
+                .setValue(settings.saveQuizletImagesToVault)
+                .onChange(async value => {
+
+                    settings.saveQuizletImagesToVault = value;
+                    await plugin.saveSettings();
+
+                }));
+
+        new Setting(quizletContent)
+            .setName("Quizlet: save as separate notes")
+            .setDesc(quizletModeDescription)
+            .addToggle(toggle => toggle
+                .setValue(settings.saveQuizletAsSeparateNotes)
+                .onChange(async value => {
+
+                    settings.saveQuizletAsSeparateNotes = value;
+                    await plugin.saveSettings();
+
+                }));
+
+        new Setting(quizletContent)
+            .setName("Quizlet folder path")
+            .setDesc("Folder inside your vault used for downloaded Quizlet card exports")
+            .addText(text => text
+                .setPlaceholder("linked-iframe-quizlet")
+                .setValue(settings.quizletFolderPath)
+                .onChange(async value => {
+
+                    settings.quizletFolderPath = value.trim() || "linked-iframe-quizlet";
+                    await plugin.saveSettings();
+
+                }));
+
+        new Setting(quizletContent)
+            .setName("Update all saved Quizlet cards")
+            .setDesc("Primary action: refresh every Quizlet set that has a stored quizlet:source marker in your vault.")
+            .addButton(button => {
+                let isUpdating = false;
+
+                button
+                    .setButtonText("Update all Quizlet cards")
+                    .setCta()
+                    .onClick(async () => {
+                        if (isUpdating) {
+                            return;
+                        }
+
+                        isUpdating = true;
+                        button.setDisabled(true);
+                        button.setButtonText("Updating...");
+                        new Notice("I link therefore iframe: updating all saved Quizlet cards...");
+
+                        try {
+                            const result = await plugin.updateAllSavedQuizletCards();
+                            new Notice(
+                                `I link therefore iframe: refreshed ${result.refreshedSetCount}/${result.uniqueSetCount} Quizlet sets (` +
+                                `saved ${result.savedCount}, updated ${result.updatedCount}, unchanged ${result.unchangedCount}, ` +
+                                `no-cards ${result.noCardsCount}, not-html ${result.notHtmlCount}, errors ${result.errorCount}).`,
+                                12000,
+                            );
+                        } catch {
+                            new Notice("I link therefore iframe: failed to update all saved Quizlet cards.");
+                        } finally {
+                            isUpdating = false;
+                            button.setDisabled(false);
+                            button.setButtonText("Update all Quizlet cards");
+                        }
                     });
-
-                text.inputEl.rows = 6;
-
             });
 
-        new Setting(containerEl)
-            .setName("Mastodon default embed height")
-            .setDesc("Set the default height (in px) for mastodon embeds. Standard default: 750.\n\nA larger default height is necessary to correctly render longer posts, but will result in excessive space for smaller posts. You can manually adjust the height for individual embeds if needed.")
-            .addText(text => {
-                text.setValue(settings.mastodonDefaultHeight)
-                    .onChange(async value => {
-                        settings.mastodonDefaultHeight = value;
-                        await plugin.saveSettings();
-                    });
-            });
+        // ── Footer ────────────────────────────────────────────────────────────
 
         const additionalInfo = new DocumentFragment();
-
-        additionalInfo.appendText("All values use ");
-        additionalInfo.appendChild(createEl("a", {
-            text: "CSS units",
-            href: "https://developer.mozilla.org/en-US/docs/Learn/CSS/Building_blocks/Values_and_units#numbers_lengths_and_percentages"
-        }));
-
-        additionalInfo.appendChild(createEl("br"));
-        additionalInfo.appendText("Reload notes to apply changes.");
-
-        additionalInfo.appendChild(createEl("br"));
-        additionalInfo.appendChild(createEl("br"));
 
         additionalInfo.appendText("Found bugs or want a feature?");
         additionalInfo.appendChild(createEl("br"));
 
         additionalInfo.appendChild(createEl("a", {
             text: "Create a GitHub issue",
-            href: "https://github.com/Gilgamesh-Tamarian/obsidian-auto-embed-plus/issues/new"
+            href: "https://github.com/Gilgamesh-Tamarian/obsidian-link-iframe/issues/new"
         }));
 
         new Setting(containerEl)
             .setDesc(additionalInfo);
     }
-}
-
-function ResetEnabledWebsites(): SupportedWebsitesMap {
-
-    return Object.fromEntries(
-        supportedWebsites.map(website => [website, true])
-    ) as SupportedWebsitesMap;
-
 }

@@ -1,137 +1,321 @@
-[![GitHub manifest version](https://img.shields.io/github/manifest-json/v/Gilgamesh-Tamarian/obsidian-auto-embed-plus)](../../releases)
-[![GitHub last commit](https://img.shields.io/github/last-commit/Gilgamesh-Tamarian/obsidian-auto-embed-plus)](../../commits/main/)
-[![GitHub Open Issues](https://img.shields.io/github/issues/Gilgamesh-Tamarian/obsidian-auto-embed-plus)](../../issues)
-[![GitHub Closed Issues](https://img.shields.io/github/issues-closed/Gilgamesh-Tamarian/obsidian-auto-embed-plus)](../../issues?q=is%3Aissue+is%3Aclosed)
-[![GitHub License](https://img.shields.io/github/license/Gilgamesh-Tamarian/obsidian-auto-embed-plus)](/LICENSE)
+[![GitHub manifest version](https://img.shields.io/github/manifest-json/v/Gilgamesh-Tamarian/obsidian-link-iframe)](https://github.com/Gilgamesh-Tamarian/obsidian-link-iframe/releases)
+[![GitHub last commit](https://img.shields.io/github/last-commit/Gilgamesh-Tamarian/obsidian-link-iframe)](https://github.com/Gilgamesh-Tamarian/obsidian-link-iframe/commits/main/)
+[![GitHub Open Issues](https://img.shields.io/github/issues/Gilgamesh-Tamarian/obsidian-link-iframe)](https://github.com/Gilgamesh-Tamarian/obsidian-link-iframe/issues)
+[![GitHub Closed Issues](https://img.shields.io/github/issues-closed/Gilgamesh-Tamarian/obsidian-link-iframe)](https://github.com/Gilgamesh-Tamarian/obsidian-link-iframe/issues?q=is%3Aissue+is%3Aclosed)
+[![GitHub License](https://img.shields.io/github/license/Gilgamesh-Tamarian/obsidian-link-iframe)](https://github.com/Gilgamesh-Tamarian/obsidian-link-iframe/blob/main/LICENSE)
 
-# obsidian-auto-embed-plus
-[Obsidian](https://obsidian.md/) plugin to help embed links automatically instead of using iframes
+# I link therefore iframe
 
-This is a fork of GnoxNahte's [obsidian-auto-embed](https://github.com/GnoxNahte/obsidian-auto-embed), which does not appear to be in active development. Thus far, support for Mastodon has been added.
+An [Obsidian](https://obsidian.md/) plugin that turns selected URLs into rich inline embeds — with a live preview to confirm before inserting.
 
+Supports 30+ websites out of the box, can save images and documents to your vault, and exports Quizlet flashcard sets to local Markdown notes.
 
-## Getting Started
-Assuming you have [Obsidian](https://obsidian.md/) downloaded, 
-Download the plugin: https://obsidian.md/plugins?id=auto-embed-plus (tentative)
+---
 
-### Embedding links
-1. Paste a link
-2. Select "Create Embed"
-3. (Optional) Add [Options](#custom-options)
-4. Done! Wait for the embed to load
+## Table of contents
 
-https://github.com/user-attachments/assets/def3599a-bac6-4517-83f3-96fc6ba5a815
+- [How it works](#how-it-works)
+- [Getting started](#getting-started)
+- [Supported providers](#supported-providers)
+- [Features in detail](#features-in-detail)
+  - [Embed workflow](#embed-workflow)
+  - [Configure embed modal](#configure-embed-modal)
+  - [Preload options](#preload-options)
+  - [Dark mode](#dark-mode)
+  - [Show original link](#show-original-link)
+  - [Save images and media to vault](#save-images-and-media-to-vault)
+  - [Save Google Docs to vault](#save-google-docs-to-vault)
+- [Quizlet vault export](#quizlet-vault-export)
+- [Known limitations](#known-limitations)
+- [FAQ](#faq)
+- [Credits](#credits)
 
-Uses the same syntax as Obsidian - [Embed Web pages](https://help.obsidian.md/Editing+and+formatting/Embed+web+pages). Syntax: `![options](link)`
+---
 
-## Features
-Auto embeds websites like: [Imgur](https://imgur.com/), [CodePen](https://codepen.io/), [Steam](https://store.steampowered.com/). Full list of [supported websites](#supported-websites)
+## How it works
 
-### Supported websites:
-#### Social Media:
-- [X](https://x.com) *
-- [Reddit](https://www.reddit.com/)
-- [TikTok](https://www.tiktok.com/)
-- [Mastodon](https://mastodon.social/)*
+When you select a URL in the editor and trigger the embed command, the plugin:
 
-#### Sound/Music:
-- [Spotify](https://open.spotify.com/) *
-- [SoundCloud](https://soundcloud.com/)
+1. Identifies the URL's provider (YouTube, Reddit, Quizlet, etc.) using a per-provider regex.
+2. Constructs the correct embed URL for that provider — for example, converting a YouTube watch link to a `/embed/` URL, or a Google Drive share link to a `/preview` URL.
+3. Optionally runs save-to-vault actions in parallel: image download, Google Doc export, or Quizlet card export.
+4. Opens a **Configure Embed** preview modal where you can inspect the live iframe and choose an aspect ratio.
+5. Inserts the final `<div><iframe>` block directly into the note at your cursor position.
 
-#### Others:
-- [CodePen](https://codepen.io/)
-- [Steam](https://store.steampowered.com/)
-- [Imgur](https://imgur.com/)
-- [Notion](https://www.notion.so/) *
+Embeds are converted into iframe markup and continue to render even if the plugin is disabled or removed.
+
+For URLs that do not match any known provider, the plugin falls back to a generic iframe using oEmbed data where available, or a plain full-page embed otherwise.
+
+> [!NOTE]
+> The conversion is not perfect for every website. You can manually edit any part of the generated iframe/details in the note when needed.
+
+---
+
+## Getting started
+
+1. Install the plugin from the Obsidian community plugin browser (ID: `link-iframe`).
+2. Enable it under **Settings → Community plugins**.
+3. In any note, select (highlight) a URL, then either:
+   - Right-click → **Convert URL to embed**, or
+   - Open the command palette and run **I link therefore iframe: Create embed**.
+4. A preview modal opens. Optionally adjust the aspect ratio, then click **OK**.
+
+---
+
+## Supported providers
+
+### Video
+
+| Provider | Notes |
+|---|---|
+| [YouTube](https://www.youtube.com/) | All URL forms: watch, short (`youtu.be`), Shorts, Live, embed. Start-time via `?t=` / `?start=` in `1h2m3s` notation |
+| [Vimeo](https://vimeo.com/) | |
+| [Dailymotion](https://www.dailymotion.com/) | |
+| [Twitch](https://www.twitch.tv/) | Channels, VODs (`/videos/`), clips |
+| [VK Video](https://vk.com/) | |
+
+### Music & audio
+
+| Provider | Notes |
+|---|---|
+| [Spotify](https://open.spotify.com/) | Tracks, albums, playlists, artists. Playback limited to 30 s without login |
+| [Apple Music](https://music.apple.com/) | Albums, playlists, individual tracks (via `?i=`) |
+| [Tidal](https://tidal.com/) | Tracks, albums, playlists, videos |
+| [Deezer](https://www.deezer.com/) | Tracks, albums, playlists, artists; light/dark theme follows plugin setting |
+| [SoundCloud](https://soundcloud.com/) | |
+
+### Social media & microblogging
+
+| Provider | Notes |
+|---|---|
+| [Twitter / X](https://x.com/) | Posts and profile timelines. Handles `x.com` only — Obsidian >= 1.7.0 handles `twitter.com` natively |
+| [Reddit](https://www.reddit.com/) | Dark mode supported |
+| [Instagram](https://www.instagram.com/) | Posts, reels, and profiles |
+| [TikTok](https://www.tiktok.com/) | |
+| [Facebook](https://www.facebook.com/) | Posts and videos |
+| [Mastodon](https://joinmastodon.org/) | Any public instance; validated via the Mastodon API before embedding |
+| [Threads](https://www.threads.net/) | |
+| [Pinterest](https://www.pinterest.com/) | Individual pins |
+| [Telegram](https://t.me/) | Public post links |
+
+### Google services
+
+| Provider | Notes |
+|---|---|
+| [Google Docs](https://docs.google.com/) | Documents shared with "anyone with the link" |
+| [Google Drive](https://drive.google.com/) | File share links (`/file/d/...` and `?id=...`) converted to `/preview` |
+| [Google Calendar](https://calendar.google.com/) | Extracts calendar ID from `src` or `cid` query parameter |
+| [Google Maps](https://maps.google.com/) | Query links, place links, coordinate links, short `maps.app.goo.gl` links |
+
+### Other
+
+| Provider | Notes |
+|---|---|
+| [Imgur](https://imgur.com/) | Single images and albums; auto-resizes via postMessage |
+| [CodePen](https://codepen.io/) | |
+| [Steam](https://store.steampowered.com/) | Store pages |
+| [Quizlet](https://quizlet.com/) | Flashcard embed; full vault export available (see [below](#quizlet-vault-export)) |
+| [Wikipedia](https://www.wikipedia.org/) | Any language subdomain |
+| [Geogebra](https://www.geogebra.org/) | Material iframes |
+| [OpenStreetMap](https://www.openstreetmap.org/) | Marker + bounding-box embed |
+
+For any URL that does not match a known provider, the plugin attempts a generic oEmbed lookup and falls back to a full-page iframe.
+
+---
+
+## Features in detail
+
+### Embed workflow
+
+There are two equivalent ways to trigger an embed:
+
+- **Context menu** — Select a URL, right-click, choose **Convert URL to embed**.
+- **Command palette** — Select a URL, run **I link therefore iframe: Create embed**.
+
+Both open the [Configure Embed modal](#configure-embed-modal) before inserting anything into the note.
+
+#### Migrating legacy embeds
+
+If you have notes using the old `![](url)` Markdown embed syntax from a previous version of this plugin, run the command **I link therefore iframe: Migrate legacy embeds in current note** to convert them to the current HTML format.
+
+---
+
+### Configure embed modal
+
+Before the embed is inserted you see a live preview of the iframe. From here you can:
+
+- **Choose an aspect ratio** from the dropdown: Auto, 16/9, 4/3, 1/1, 9/16, 3/2, 21/9, None, or a custom ratio (e.g. `5/4`).
+- **Resize the preview** by dragging the bottom-right corner.
+- **Reset to note width** using the reset button.
+- Click **OK** to insert or **Cancel** to discard.
+
+For providers that produce non-iframe native markup (e.g. social post widgets), sizing controls are hidden and the modal shows a plain static preview.
+
+---
+
+### Preload options
+
+Controls how embeds behave before the iframe content has fully loaded. Found in **Settings → Preload options**.
+
+| Option | Behaviour |
+|---|---|
+| None | Embed loads immediately when the note is opened |
+| Placeholder | Shows a loading placeholder while the iframe fetches content |
+| Placeholder + click to load | Shows a static placeholder; the iframe only loads after the user clicks on it |
+
+The placeholder modes reduce Cumulative Layout Shift (CLS) and avoid network requests for embeds you never scroll to.
+
+---
+
+### Dark mode
+
+Enables dark theme variants for providers that support them. Currently applied to Twitter/X, Reddit, and Deezer. Toggle in **Settings → Dark mode**.
+
+---
+
+### Show original link
+
+Appends an *Open original link* footer below every generated embed so you can always reach the source page directly. Toggle in **Settings → Show original link under embed**.
+
+---
+
+### Save images and media to vault
+
+**Save image embeds to vault** — When enabled, direct image URLs (`.jpg`, `.png`, `.gif`, etc.) are downloaded to your vault and the embed link is replaced with a local vault path.
+
+**Save social media images to vault** — When additionally enabled, the plugin fetches the first available media image from supported social/media platforms and saves it to your vault alongside the embed. The embed URL in the note is preserved; only the image asset is stored locally. For some sites like Instagram, this does not always work.
+
+Platforms supported for social media image extraction:
+
+- Instagram, Facebook, Pinterest, Telegram, Mastodon, Reddit
+- TikTok, Imgur, SoundCloud, Spotify, CodePen, Steam
+
+**Image folder path** (default: `linked-iframe-images`) — vault folder for all downloaded image files.
+
+---
+
+### Save Google Docs to vault
+
+When **Save Google Docs to vault** is enabled, embedding a Google Docs URL also downloads a Markdown copy of the document into your vault.
+
+> [!IMPORTANT]
+> The document must be shared with *Anyone with the link* for the export to succeed.
+
+**Google Docs folder path** (default: `linked-iframe-docs`) — vault folder for exported Markdown files.
+
+---
+
+## Quizlet vault export
+
+Enabling **Save Quizlet cards to vault** exports the flashcards from any Quizlet set you embed into local Markdown notes. The export runs at embed time and attempts several extraction strategies in sequence to maximise compatibility with Quizlet's varying page formats: REST API, `__NEXT_DATA__` JSON, JSON-LD structured data, script variable patterns, and visible page text.
 
 > [!WARNING]
-> Websites with `*` means that it has some sort of limitation/note. See [Current Limitations & Known Bugs](#current-limitations--known-bugs) for more info
+> This setting can impact general plugin performance. Embedding larger Quizlet sets may cause visible stutter while the export runs.
 
-For unsupported websites, the plugin will embed the whole website and not modify it.
+### Export modes
 
-For a list with examples of how the websites look like [Supported Websites List](SupportedWebsiteList.md). 
+**Single-file mode** (default) — one Markdown file per set, with all cards listed as term/definition pairs. Good for quick reference.
 
-## Custom Options
-How to add options: 
-- In between the square brackets - `![add options here](https://example.com)`
-- If you aren't sure which options are available, refer to the table below
+**Separate notes mode** (toggle **Quizlet: save as separate notes**) — one folder per set and one Markdown note per card. Recommended for use with the [Yanki](obsidian://show-plugin?id=yanki) plugin, which syncs Obsidian notes to Anki.
 
-### All options:
-| Option | Description | Example Markdown |
-|---|---|---|
-|noembed|Disables embedding for this link. If possible, try using `[](link)` instead. Same syntax, just without '!'|`![noembed](https://example.com)`
-|w:`value` / width:`value`|Sets embed's width|`![w:100%](https://example.com)`
-|h:`value` / height:`value`|Sets embed's height |`![h:500px](https://example.com)`
-<!--- 
-TODO: Dark mode
+**Quizlet image mode** (toggle **Quizlet: save card images to vault**) — when enabled, card images are downloaded and embedded locally in exported notes; when disabled, exports keep text-only card content.
 
-TODO: Find out how to format size. the separator between width and height is "x". Conflicts with "px"
-|size: `value`x`value`|Sets both embed's width and height. Uses [CSS Units](https://developer.mozilla.org/en-US/docs/Learn/CSS/Building_blocks/Values_and_units#lengths)|`[size:100%x300px](example.com)`
---->
+### Yanki interoperability
 
-Uses [CSS Units](https://developer.mozilla.org/en-US/docs/Learn/CSS/Building_blocks/Values_and_units#lengths) where applicable.
+Separate notes mode is designed to work cleanly with Yanki workflows where each note maps to one flashcard.
 
-## Custom styles
-TODO: Add a table that lists all the CSS classes users can override.
+Why this works well with Yanki:
 
+- One card per file gives Yanki a stable source note instead of parsing multiple cards from one large document.
+- `QuizletSetId` + `QuizletCardId` frontmatter gives each note a durable identity, so re-exports update the same note instead of creating duplicates.
+- Front/back `quizlet:user-notes` blocks are preserved during updates, so your own edits and mnemonics stay intact after syncing new Quizlet changes.
+- Stale cards are marked with `<!-- quizlet:stale=true -->` rather than deleted, so you can decide in Obsidian/Yanki whether to archive, suspend, or keep them.
 
-## How the plugin works
-A brief overview with some steps on how the plugin works. *Not required to use the plugin*, just for those who are curious. Certain steps vary depending on whether you're in **Reading View** or **Live Preview**. However, the plugin doesn't have any impact when you're in source mode.
-1. Search where in the document the syntax is found.
-	- In **Reading View**: <br>
-		Searches for the `<img>` tag that's generated by Obsidian when you use this format: `![](link)`
-	- In **Live Preview**: <br>
-		Searches for `![](link)` and gets the [options](#custom-options) and URL from it.
-2. Get the URL from it, and convert it to the embed equivalent. Usually adds `/embed/` somewhere in the url. Results in the same website but focused only on the content. No headers, footer, etc
-	- Example: <br>https://codepen.io/jh3y/pen/LYNZwGm converts to https://codepen.io/jh3y/embed/LYNZwGm?default-tab=result&editable=true
-3. Replace those tags with `<iframe>` and apply options (width, height, dark mode, etc)
-4. Some websites like Twitter, Reddit or Imgur, will send a resize message. The plugin uses the info to resize the embed.
+Recommended workflow with Yanki:
 
-## Roadmap
-- [ ] Add support for other websites
-	- [ ] Google Maps
-	- [ ] Google Calendar
-	- [x] Mastodon. Since there isn't a good way to check if the url is from Mastodon, have a setting that lets users input their own servers to be embedded as Mastodon. 
-	- [ ] Other websites. [Iframely](https://iframely.com/domains) has a list of websites that can be embedded.
-- [ ] Add preview websites when hovering a link and holding `Ctrl` for websites that aren't embedded using the syntax.
-- [ ] Add tests
-- [ ] Updated README.md
-	- [ ] Improve readability. Open to suggestions, especially if something isn't clear.
-	- [ ]  Add images/gifs to show examples
- 	- [ ]  Add installation instructions
+1. Enable **Save Quizlet cards to vault** and **Quizlet: save as separate notes**.
+2. Keep exports under a dedicated Quizlet folder (default `linked-iframe-quizlet`) so Yanki can target that path cleanly.
+3. Configure Yanki to use term as front and definition as back, while leaving the `quizlet:user-notes` blocks available for personal additions.
+4. Use **Update all saved Quizlet cards** when sets change; then run your Yanki sync so only changed notes are propagated.
 
-> [!TIP]
-> Submit any features you want using [GitHub Issues](https://github.com/GnoxNahte/obsidian-auto-embed/issues) or [Google Forms](https://forms.gle/xtuv4FVCKZ2tg9zK9) (if u aren't comfortable with GitHub)
-> Even if the feature is already listed, just submit it so I'll try to prioritise it.
+### Card note structure (separate notes mode)
 
-### Current Limitations & Known Bugs 
-- General
-	- **Live Preview**: 
-		- The cursor location doesn't match with Obsidian's [Embed Web pages](https://help.obsidian.md/Editing+and+formatting/Embed+web+pages). Still trying to fix it.
-		- Rarely happens but sometimes it glitches out and doesn't let you edit. When it does that, either restart the app or switch to [Source mode](https://help.obsidian.md/Editing+and+formatting/Edit+and+preview+Markdown#Source+mode).
-- Website specific
-	- **Spotify**: Only able to play 30 seconds of a song. Spotify only allows when the user is logged in to the browser, which isn't possible in Obsidian.
-	- **Reddit**: Share link (link with `/s/` instead of `/comments/` in the URL) isn't supported. As a workaround, open the link in a browser and Reddit should redirect it to the `/comments/` link which is supported.
-	- **Notion**: The notion note needs to be a [published website](https://www.notion.so/help/public-pages-and-web-publishing). Also, the plugin isn't doing anything special for Notion. Unlike other websites, it's just using the raw link as an iframe.
-	- **Twitter & YouTube**: Since [Obsidian supports it](https://help.obsidian.md/Editing+and+formatting/Embed+web+pages), I won't interfere with it. However, it means [options](#custom-options) isn't supported. I might be able to replace Obsidian's embeds with mine, but [options](#custom-options) will only work in *Live Preview*, but not *Reading Mode*. This makes an inconsistent user experience but if you want this feature, contact me / create a pull request.
-	- **Twitter / X**: Obsidian supports https://twitter.com but not https://x.com. This plugin just helps to embed X. If you replace Twitter with x, or vice versa, it'll lead to the same tweet/post. Usually when copying from the mobile app, it's X. When copying from the web, it's Twitter.
-	- **Mastodon**: Mastodon is decentralised, which makes it difficult to register by the plugin. You can add the [servers](https://joinmastodon.org/servers) of the posts you want to embed in the plugin settings under "Allowed Mastodon servers" - [mastodon.social](https://mastodon.social/) is supported by default.
-	  !Please note that you must use the link of the original server (_e.g._ mastodon.social/@user/1234 and not mstdn.social/@user@mastodon.social/1234)
+Each card note is structured as:
 
-Please [send any issues](https://github.com/Gilgamesh-Tamarian/obsidian-auto-embed-plus/issues) you found!
+````markdown
+---
+QuizletSetId: "123456789"
+QuizletCardId: "987654321"
+---
 
-## Frequently asked questions
-### The embed isn't appearing
+Card term
+
+<!-- quizlet:user-notes:start -->
+Your notes for the front of this card
+<!-- quizlet:user-notes:end -->
+
+---
+
+Card definition
+
+<!-- quizlet:user-notes:start -->
+Your notes for the back of this card
+<!-- quizlet:user-notes:end -->
+
+<!-- quizlet:source=https://quizlet.com/... -->
+````
+
+Key behaviours:
+
+- `QuizletSetId` and `QuizletCardId` in frontmatter identify existing notes on re-export, so cards are updated in place rather than duplicated.
+- The `<!-- quizlet:user-notes:start/end -->` blocks are preserved across all future updates — anything you write inside them is never overwritten. There is one block for the front and one for the back of each card.
+- Cards removed from the live Quizlet set are marked `<!-- quizlet:stale=true -->` rather than deleted from your vault.
+- If **Quizlet: save card images to vault** is enabled, card images are downloaded to the set's local asset folder and embedded with `![[path]]`.
+
+### Bulk update
+
+The **Update all saved Quizlet cards** button in settings scans your entire vault for `<!-- quizlet:source=... -->` markers, deduplicates by set ID, and re-exports every unique set. A notice reports the result: sets refreshed, saved, updated, unchanged, and any errors.
+
+**Quizlet folder path** (default: `linked-iframe-quizlet`) — vault folder for all Quizlet exports.
+
+---
+
+## Known limitations
+
+**Spotify** — Playback is limited to 30-second previews. Full playback requires a logged-in browser session, which is not possible inside Obsidian.
+
+**Twitter / X** — Only `x.com` URLs are handled by this plugin. Obsidian >= 1.7.0 handles `twitter.com` natively. Both domains point to the same content.
+
+**Mastodon** — The plugin validates the instance domain against the Mastodon API before embedding. Always use the original post URL from the source instance (e.g. `mastodon.social/@user/1234`), not a cross-instance copy.
+
+**Reddit** — Reddit short share links (`/s/...`) cannot be embedded directly. Open the link in a browser first — Reddit will redirect to the full `/comments/...` URL which the plugin handles correctly.
+
+**Quizlet** — Card data is only accessible for public sets. Private or password-protected sets cannot be exported.
+
+**Google Docs** — The Markdown vault export only works if the document is shared with *Anyone with the link*.
+
+---
+
+## FAQ
+
+**The embed isn't appearing.**
+
 1. Have you [enabled the plugin](https://help.obsidian.md/Extending+Obsidian/Community+plugins#Enable+a+community+plugin)?
-2. Are you following this syntax? `![](link)`<br>
-	For example: `![](https://example.com)`
-3. If it still doesn't work, [create a post in Discussions](https://github.com/Gilgamesh-Tamarian/obsidian-auto-embed-plus/discussions/categories/general) so I can help you
+2. Did you select a URL and use the context menu or command? The plugin inserts HTML directly — pasting a raw URL alone does not create an embed.
+3. If the problem persists, [open a GitHub issue](https://github.com/Gilgamesh-Tamarian/obsidian-link-iframe/issues/new) with the URL and a description of what you see.
 
-## Contact Me
+**The Quizlet export produced no cards.**
 
-I've just started Obsidian and this is pretty much the first plugin I've ever coded.<br>
-If you have any questions, feature requests, bugs or anything related to the plugin, feel free to [create an issue](https://github.com/Gilgamesh-Tamarian/obsidian-auto-embed-plus/issues/new)
-If this plugin helped you, you might consider supporting [the original creator](https://github.com/GnoxNahte) at [Ko-fi](https://ko-fi.com/gnoxnahtedev)
+Confirm the set is public by opening the URL in a browser. If it is public and the export still fails, [open an issue](https://github.com/Gilgamesh-Tamarian/obsidian-link-iframe/issues/new) with the set URL.
+
+**A website I use is not supported.**
+
+[Open a feature request](https://github.com/Gilgamesh-Tamarian/obsidian-link-iframe/issues/new). Until it is added, the plugin will embed the full page as a generic iframe.
+
+---
 
 ## Credits
-- Improving upon GnoxNahte's [obsidian-auto-embed](https://github.com/GnoxNahte/obsidian-auto-embed), which was itself inspired by Sam Warnick's archived [Simple Embed](https://github.com/samwarnick/obsidian-simple-embeds).
+
+- Built on GnoxNahte's [obsidian-auto-embed](https://github.com/GnoxNahte/obsidian-auto-embed), which was itself inspired by Sam Warnick's archived [Simple Embed](https://github.com/samwarnick/obsidian-simple-embeds).
+- New architecture and provider class system draws from FHachez's [obsidian-convert-url-to-iframe](https://github.com/FHachez/obsidian-convert-url-to-iframe).
+- Save-to-vault concepts inspired by Seraphli's [obsidian-link-embed](https://github.com/Seraphli/obsidian-link-embed).

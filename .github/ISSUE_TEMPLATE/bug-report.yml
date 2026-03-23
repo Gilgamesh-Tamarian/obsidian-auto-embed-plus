@@ -49,9 +49,9 @@ body:
     attributes:
       label: Plugin Version
       description:  |  
-        What Auto Embed version are you using?
+        What link-iframe version are you using?
         If left blank, I will assume you're on the latest version
-      placeholder: 1.2.7
+      placeholder: 2.0.0
   - type: dropdown
     id: os
     attributes:

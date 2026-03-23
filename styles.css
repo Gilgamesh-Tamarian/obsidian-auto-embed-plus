@@ -49,6 +49,7 @@ iframe.auto-embed {
 .auto-embed {
     transition: opacity var(--auto-embed-anim-duration) linear,
                 height var(--auto-embed-anim-duration) ease-in-out;
+    width: 100%;
     height: 100%;
 }
 
@@ -152,19 +153,6 @@ iframe.auto-embed {
     display: none;
 }
 
-.auto-embed {
-    /* Times: 
-        --anim-duration-moderate 
-        --anim-duration-slow
-        */
-        
-    transition: opacity var(--auto-embed-anim-duration) linear,
-                height var(--auto-embed-anim-duration) ease-in-out;
-    
-    width: 100%;
-    height: 100%;
-}
-
 /* Handle bullet list */
 .HyperMD-list-line > .is-collapsed ~ .auto-embed-container{
     display: none;
@@ -211,6 +199,30 @@ iframe.default-fallback-embed {
     aspect-ratio: 16 / 9;
 }
 
+/* Vimeo */
+.vimeo-embed {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+}
+
+/* Dailymotion */
+.dailymotion-embed {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+}
+
+/* VK Video */
+.vk-video-embed {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+}
+
+/* Twitch */
+.twitch-embed {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+}
+
 /* Error */
 .error-embed, 
 .embed-no-connection {
@@ -249,17 +261,12 @@ iframe.default-fallback-embed {
 .spotify-embed-container {
     left: 0;
     width: 100%;
-    height: 80px;
+    height: 152px;
     position: relative;
 
     :has(> iframe) {
         height: 100%;
     }
-}
-
-.spotify-embed-container.spotify-song-large,
-.spotify-embed-container.spotify-playlist-small {
-    height: 152px;
 }
 
 .spotify-playlist-embed {
@@ -274,6 +281,41 @@ iframe.default-fallback-embed {
     position: absolute;
 }
 
+/* Apple Music */
+.apple-music-embed {
+    width: 100%;
+    height: 450px;
+}
+
+/* Single song (album URL with ?i= track param) */
+.apple-music-song-embed {
+    height: 175px;
+}
+
+.apple-music-playlist-embed {
+    height: 660px;
+}
+
+/* Tidal */
+.tidal-embed {
+    width: 100%;
+    height: 520px;
+}
+
+.tidal-track-embed {
+    height: 170px;
+}
+
+/* Deezer */
+.deezer-embed {
+    width: 100%;
+    height: 520px;
+}
+
+.deezer-track-embed {
+    height: 300px;
+}
+
 /* CodePen */
 .codepen-embed {
     width: 100%;
@@ -281,18 +323,38 @@ iframe.default-fallback-embed {
     /* min-height: 300px; */
 }
 
-/* Google Docs */
-.google-docs-embed-edit-default {
-    height: 76.5rem;
+/* Geogebra */
+.geogebra-embed {
     width: 100%;
+    aspect-ratio: 4 / 3;
+    min-height: 420px;
 }
+
+/* Quizlet */
+.quizlet-embed {
+    --quizlet-scale: 0.75;
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-bottom: 80%; /* 4/5 = 80% — gives a true 5:4 ratio box */
+    overflow: hidden;
+}
+
+.quizlet-embed > iframe.auto-embed {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: calc(100% / var(--quizlet-scale));
+    height: calc(100% / var(--quizlet-scale));
+    transform: scale(var(--quizlet-scale));
+    transform-origin: top left;
+    border: 0;
+}
+
+/* Google Docs */
 .google-docs-embed-preview {
     width: 100%;
     aspect-ratio: 4/5;
-}
-.google-docs-embed-edit-minimal {
-    width: 100%;
-    height: 70rem;
 }
 
 /* TikTok */
@@ -332,8 +394,99 @@ iframe.default-fallback-embed {
     /* aspect-ratio: 1; */
 }
 
+.facebook-embed {
+    width: 100%;
+    height: 560px;
+}
+
+.pinterest-embed {
+    width: 100%;
+    height: 620px;
+}
+
+.telegram-embed {
+    width: 100%;
+    height: 420px;
+}
+
 /* Mastodon embed flexible height */
 .mastodon-embed {
     height: auto;
     width: 100%;
+}
+
+/* Google Calendar */
+.google-calendar-embed {
+    width: 100%;
+    height: 600px;
+}
+
+/* Google Maps */
+.google-maps-embed {
+    width: 100%;
+    height: 500px;
+}
+
+/* OpenStreetMap */
+.openstreetmap-embed {
+    width: 100%;
+    height: 500px;
+}
+
+/* Wikipedia */
+.wikipedia-embed {
+    width: 100%;
+    height: 700px;
+}
+
+/* ===== Settings tab collapsible sections ===== */
+
+.auto-embed-settings-section {
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--radius-m);
+    margin: 0.75em 0;
+}
+
+.auto-embed-settings-section-summary {
+    cursor: pointer;
+    padding: 0.65em 1em;
+    font-size: var(--font-ui-medium);
+    font-weight: var(--font-semibold);
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    border-radius: var(--radius-m);
+    color: var(--text-normal);
+    user-select: none;
+}
+
+.auto-embed-settings-section-summary::-webkit-details-marker {
+    display: none;
+}
+
+.auto-embed-settings-section-summary::before {
+    content: "▶";
+    font-size: 0.65em;
+    transition: transform 0.15s ease;
+    display: inline-block;
+    color: var(--text-muted);
+}
+
+.auto-embed-settings-section[open] > .auto-embed-settings-section-summary::before {
+    transform: rotate(90deg);
+}
+
+.auto-embed-settings-section-desc {
+    padding: 0 1em 0.5em 1em;
+    font-size: var(--font-ui-smaller);
+    color: var(--text-muted);
+}
+
+.auto-embed-settings-section[open] > .auto-embed-settings-section-desc {
+    display: none;
+}
+
+.auto-embed-settings-section-content {
+    border-top: 1px solid var(--background-modifier-border);
 }

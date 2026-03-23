@@ -17,6 +17,58 @@ Things to remember:
 - Add & remove all features, improvements, bugs
 - Try to check all the links link to a valid location
 -->
+## [2.0.0](https://github.com/Gilgamesh-Tamarian/obsidian-link-iframe/tree/2.0.0) (2026-03-23)
+
+Renamed to **I link therefore iframe** (plugin ID: `link-iframe`). This is a major release built on a new internal architecture and a significantly expanded set of supported providers.
+
+**Architecture:**
+- Complete architectural rewrite, incorporating ideas and structure from [obsidian-convert-url-to-iframe](https://github.com/FHachez/obsidian-convert-url-to-iframe) by FHachez. Embedding is now handled by a typed per-provider class hierarchy (`EmbedBase` subclasses), making it straightforward to add and maintain individual providers.
+- New platform-aware default sizing system — each provider has a tuned set of default aspect ratios, heights and min-heights so embeds look correct out of the box.
+- New resizable iframe container with aspect-ratio selector in the configure modal, with a legacy container for older Electron versions that lack CSS `aspect-ratio` support.
+- Quizlet iframes use a CSS scale trick to compensate for the cross-origin sizing restrictions of the Quizlet embed.
+
+**New embed providers:**
+- Apple Music (albums, playlists, single tracks via `?i=`)
+- Deezer (tracks, albums, playlists, artists)
+- Tidal (tracks, albums, playlists, videos)
+- Vimeo
+- Dailymotion
+- Twitch (channels, VODs, clips)
+- VK Video
+- Google Drive (file share links → `/preview`)
+- Google Calendar (via `src`/`cid` parameters)
+- Google Maps (query links, place links, coordinate links, short links via `maps.app.goo.gl`)
+- OpenStreetMap (marker + bounding-box embed)
+- Wikipedia (any language subdomain)
+- Geogebra (material iframe)
+- Quizlet (flashcard embed; see also vault export below)
+- Facebook (posts and videos)
+- Pinterest (individual pins)
+- Telegram (public post links)
+- Threads
+
+**Save to vault — images and media** (inspired by [obsidian-link-embed](https://github.com/Seraphli/obsidian-link-embed) by Seraphli):
+- New setting: **Save image embeds to vault** — downloads direct image URLs and replaces embed links with local vault files.
+- New setting: **Save social media images to vault** — for supported platforms (Instagram, Facebook, Pinterest, Telegram, Mastodon, Reddit, TikTok, Imgur, SoundCloud, Spotify, CodePen, Steam) fetches the first available media image and stores it locally.
+- New setting: **Save Google Docs to vault** — downloads a Markdown copy of a shared Google Doc into a configurable vault folder.
+
+**Quizlet vault export:**
+- New setting: **Save Quizlet cards to vault** — best-effort export of public Quizlet sets to local Markdown notes using several extraction strategies (REST API, `__NEXT_DATA__`, JSON-LD, script patterns, visible text).
+- New setting: **Quizlet: save as separate notes** — one folder per set and one note per card, fully compatible with the [Yanki](obsidian://show-plugin?id=yanki) plugin for Anki sync. When disabled, saves one file per set.
+- Card notes use `QuizletSetId` / `QuizletCardId` frontmatter for stable identity across updates.
+- User-written notes are preserved in `<!-- quizlet:user-notes:start/end -->` blocks on both sides of the card (front / back).
+- Set source is tracked with a `<!-- quizlet:source=… -->` marker so the bulk updater can find it.
+- New button: **Update all saved Quizlet cards** — scans the vault for stored source markers and re-exports every unique set in one go.
+- Card images are downloaded to a local assets folder when available.
+- Stale cards (removed from the live set) are marked with a `<!-- quizlet:stale=true -->` comment rather than deleted.
+
+**Other improvements:**
+- Show original link toggle — adds an *Open original link* footer below generated embeds, on by default.
+- YouTube: improved video-ID extraction across all URL forms (watch, short URL, Shorts, Live, embed); start-time support (`?t=` / `?start=` with `1h2m3s` notation).
+- Twitter/X: updated regex to match only `x.com` (Obsidian ≥ 1.7.0 handles `twitter.com` natively).
+- Mastodon: async instance validation via Mastodon API before embedding.
+- Configurable vault folder paths for images (`linked-iframe-images`), Google Docs (`linked-iframe-docs`) and Quizlet exports (`linked-iframe-quizlet`).
+
 ## [1.2.7](https://github.com/Gilgamesh-Tamarian/obsidian-auto-embed-plus/tree/1.2.7) (2026-03-14)
 
 **New Features:**

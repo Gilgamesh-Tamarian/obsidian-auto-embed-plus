@@ -1,81 +1,53 @@
 import { setCssProps } from "../utility";
-import { FallbackOptions, SupportedWebsites } from "src/settings-tab";
+import { SupportedWebsites } from "src/settings-tab";
 import { BaseEmbedData, EmbedBase } from "./embedBase";
 import { requestUrl } from "obsidian";
 
 export class DefaultFallbackEmbed extends EmbedBase {
+    private static readonly DEFAULT_WIDTH = "100%";
+    private static readonly DEFAULT_HEIGHT = "500px";
+    private static readonly DEFAULT_LINK_TEXT = "Link";
+
     name: SupportedWebsites | "Fallback" = "Fallback";
     regex = new RegExp(/ /); // Not using regex for this
 
     createEmbed(url: string, embedOptions: BaseEmbedData): HTMLElement {
-        // const youtubeMatch = url.match(/https:\/\/www.youtube.com\/embed\/(\w+)/);
-        // console.log("Match : " + youtubeMatch)
-        // if (youtubeMatch)
-        //     return this.onErrorCreatingEmbed(`Unable to parse YouTube ${youtubeMatch[1]} urls. Try deleting "/${youtubeMatch[1]}"`);
+        const embedContainer = createSpan();
+        embedContainer.addClass(this.autoEmbedCssClass, "default-fallback-embed-container");
 
-        switch (this.plugin.settings.fallbackOptions) {
-            case FallbackOptions.ShowErrorMessage:
-                return this.onErrorCreatingEmbed(url, "Website is not supported");
-            case FallbackOptions.EmbedLink:
-            { 
-                const embedContainer = createSpan();
-                embedContainer.addClass(this.autoEmbedCssClass, "default-fallback-embed-container");
+        const iframe = createEl("iframe");
+        iframe.src = url;
+        iframe.classList.add(this.autoEmbedCssClass);
+        iframe.dataset.containerClass = "default-fallback-embed";
 
-                // Creating the iframe
-                const iframe = createEl("iframe");
-                
-                iframe.src = url;
-                
-                iframe.classList.add(this.autoEmbedCssClass);
-                iframe.dataset.containerClass = "default-fallback-embed";
-                
-                if (embedOptions.width)
-                    setCssProps(embedContainer, { width: embedOptions.width });
-                else {
-                    const width = this.plugin.settings.fallbackWidth;
-                    if (width) 
-                        setCssProps(embedContainer, { width });
-                }
-                
-                if (embedOptions.height)
-                    setCssProps(embedContainer, { height: embedOptions.height });
-                else {
-                    const height = this.plugin.settings.fallbackHeight;
-                    if (height) 
-                        setCssProps(embedContainer, { height });
-                }
+        setCssProps(embedContainer, {
+            width: embedOptions.width ?? DefaultFallbackEmbed.DEFAULT_WIDTH,
+            height: embedOptions.height ?? DefaultFallbackEmbed.DEFAULT_HEIGHT,
+        });
 
-                embedContainer.appendChild(iframe);
+        embedContainer.appendChild(iframe);
 
-                if (embedOptions.alt || (this.plugin.settings.fallbackDefaultLink && !this.plugin.settings.fallbackAutoTitle)) {
-                    const linkText = embedOptions.alt ? embedOptions.alt : this.plugin.settings.fallbackDefaultLink;
-                    const link = createEl("a", {href: url, text: linkText.trim()});
-                    embedContainer.appendChild(link);
-                }
-                else if (this.plugin.settings.fallbackAutoTitle) {
-                    // Scrape the title and add it.
-                    const link = createEl("a", {href: url, text: "Loading title..."});
-                    this.linkTitle(url)
-                        .then(title => link.text = title)
-                        .catch(() => link.text = url);
-                    embedContainer.appendChild(link);
-                }
-
-                return embedContainer;
-            }
-            case FallbackOptions.Hide:
-                return createEl("span", {cls: "auto-embed-hide-visibility"});
+        if (embedOptions.alt) {
+            const link = createEl("a", { href: url, text: embedOptions.alt.trim() });
+            embedContainer.appendChild(link);
+            return embedContainer;
         }
+
+        const link = createEl("a", { href: url, text: "Loading title..." });
+        this.linkTitle(url)
+            .then(title => link.text = title)
+            .catch(() => link.text = url);
+        embedContainer.appendChild(link);
+
+        return embedContainer;
     }
 
     async linkTitle(url: string) {
         try {
             const response = await requestUrl({url: url, method: "GET"});
-            
-            // console.log(response);
 
             if (!response.headers["content-type"].includes("text/html"))
-                return this.plugin.settings.fallbackDefaultLink;
+                return DefaultFallbackEmbed.DEFAULT_LINK_TEXT;
 
             const html = response.text;
             const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -85,10 +57,10 @@ export class DefaultFallbackEmbed extends EmbedBase {
                 return title.text;
             }
             else {
-                return this.plugin.settings.fallbackDefaultLink;
+                return DefaultFallbackEmbed.DEFAULT_LINK_TEXT;
             }
         } catch (ex) {
             return `Error: ${ex.message}`;
         }
     }
-} 
+}

@@ -32,6 +32,21 @@ export interface EmbedResult {
     placeholderEl?: HTMLDivElement;
 }
 
+interface EmbedIframeConfig {
+    src: string;
+    parent?: HTMLElement;
+    containerClass?: string;
+    classNames?: string[];
+    dataset?: Record<string, string | undefined>;
+    scrolling?: string;
+    allow?: string;
+    allowFullscreen?: boolean;
+    sandbox?: string[];
+    styles?: Record<string, string>;
+    cacheKey?: string;
+    cacheWidth?: boolean;
+}
+
 export abstract class EmbedBase {
     readonly autoEmbedCssClass: string = "auto-embed";
     readonly name: SupportedWebsites | "Other" | "Fallback";
@@ -51,10 +66,69 @@ export abstract class EmbedBase {
         this.plugin = plugin;
         this.sizeCache = {};
     }
+
+    protected createEmbedIframe(config: EmbedIframeConfig): HTMLIFrameElement {
+        const iframe = config.parent
+            ? createEl("iframe", { parent: config.parent })
+            : createEl("iframe");
+
+        iframe.src = config.src;
+        iframe.classList.add(this.autoEmbedCssClass, ...(config.classNames ?? []));
+
+        if (config.containerClass)
+            iframe.dataset.containerClass = config.containerClass;
+
+        if (config.dataset) {
+            Object.entries(config.dataset).forEach(([key, value]) => {
+                if (value !== undefined)
+                    iframe.dataset[key] = value;
+            });
+        }
+
+        if (config.scrolling)
+            iframe.setAttribute("scrolling", config.scrolling);
+
+        if (config.allow)
+            iframe.setAttribute("allow", config.allow);
+
+        if (config.allowFullscreen)
+            iframe.setAttribute("allowfullscreen", "");
+
+        if (config.sandbox?.length)
+            iframe.sandbox.add(...config.sandbox);
+
+        if (config.styles)
+            setCssProps(iframe, config.styles);
+
+        if (config.cacheKey)
+            this.applyCachedSize(iframe, config.cacheKey, config.cacheWidth);
+
+        return iframe;
+    }
+
+    protected applyCachedSize(iframe: HTMLIFrameElement, cacheKey: string, includeWidth: boolean = false): void {
+        const cachedSize = this.sizeCache[cacheKey];
+        if (!cachedSize)
+            return;
+
+        if (cachedSize.height)
+            setCssProps(iframe, { height: `${cachedSize.height}px` });
+
+        if (includeWidth && cachedSize.width)
+            setCssProps(iframe, { width: `${cachedSize.width}px` });
+    }
+
+    protected cacheSize(cacheKey: string, height: number, width: number = 0): void {
+        this.sizeCache[cacheKey] = { width, height };
+    }
+
+    async validateUrl(_link: string): Promise<boolean> {
+        return true;
+    }
     
     abstract createEmbed(link: string, embedData?: BaseEmbedData): HTMLElement;
 
-    create(link: string, embedData: BaseEmbedData): EmbedResult {
+    create(link: string, embedData: BaseEmbedData, forNoteExport: boolean = false): EmbedResult {
         if (!window.navigator.onLine) {
             const container = createDiv({cls: ["auto-embed-container", this.autoEmbedCssClass]});
             const embed = container.appendChild(this.onNoInternetConnection());
@@ -68,7 +142,7 @@ export abstract class EmbedBase {
         const embed = this.createEmbed(link, embedData);
         let embedClass: string;
         if (embedData.embedSource.name === "Fallback")
-            embedClass = "default-fallback-container";
+            embedClass = "default-fallback-embed-container";
         else if (embed.dataset.containerClass)
             embedClass = embed.dataset.containerClass;
         else
@@ -78,15 +152,16 @@ export abstract class EmbedBase {
         const container = createDiv({cls: ["auto-embed-container", embedClass]});
         container.appendChild(embed);
         
-        // Check if it links to an image:
-        void requestUrl({url: link, method: "HEAD"}).then(res => {
-            // console.log(res);
-            if (res.headers["content-type"].startsWith("image"))
-            {
-                container.classList.add("auto-embed-hide-display");
-                container.parentElement?.removeChild(container);
-            }
-        }).catch(() => undefined);
+        if (!forNoteExport) {
+            // Runtime-only behavior in reading/live preview.
+            void requestUrl({url: link, method: "HEAD"}).then(res => {
+                if (res.headers["content-type"].startsWith("image"))
+                {
+                    container.classList.add("auto-embed-hide-display");
+                    container.parentElement?.removeChild(container);
+                }
+            }).catch(() => undefined);
+        }
 
         if (embed.classList.contains("error-embed")) {
             console.debug("Container:", embedData.embedContainer);
@@ -97,7 +172,9 @@ export abstract class EmbedBase {
             };
         }
         
-        const iframe = embed instanceof HTMLIFrameElement ? embed : embed.querySelector(':scope > iframe') as HTMLIFrameElement;
+        const iframe = embed instanceof HTMLIFrameElement
+            ? embed
+            : (embed.querySelector(':scope > iframe') as HTMLIFrameElement | null);
 
         // Add placeholder
         let placeholder: HTMLDivElement | undefined;
@@ -111,10 +188,11 @@ export abstract class EmbedBase {
             }
 
             iframe?.addEventListener("load", ShowEmbed_HidePlaceholder);
-            container.addEventListener("auto-embed-error", ShowEmbed_HidePlaceholder)
+            container.addEventListener("auto-embed-error", ShowEmbed_HidePlaceholder);
+            container.addEventListener("auto-embed-loaded", ShowEmbed_HidePlaceholder);
         }
 
-        if (this.plugin.settings.preloadOption !== PreloadOptions.None)
+        if (iframe && !forNoteExport && this.plugin.settings.preloadOption !== PreloadOptions.None)
         {
             placeholder = this.generatePlaceholder(link);
             container.appendChild(placeholder);
@@ -155,6 +233,10 @@ export abstract class EmbedBase {
                     loader.classList.toggle(hideClass, false);
                 AddOnLoadEvent(iframe);
             }
+        } else if (!iframe) {
+            container.addEventListener("auto-embed-loaded", () => {
+                embed.classList.remove(hideClass);
+            });
         }
 
         return {
