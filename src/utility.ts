@@ -274,14 +274,14 @@ function firstImageUrl(candidates: Array<string | undefined | null>): string | n
     return null;
 }
 
-async function resolveMastodonImageUrl(
+async function resolveAllMastodonImageUrls(
     url: string,
     debug: boolean = false,
-): Promise<string | null> {
+): Promise<string[]> {
     const mastodonInfo = getMastodonStatusInfo(url);
 
     if (!mastodonInfo) {
-        return null;
+        return [];
     }
 
     try {
@@ -299,30 +299,25 @@ async function resolveMastodonImageUrl(
             ...(status.reblog?.media_attachments ?? []),
         ];
 
-        const imageAttachment = attachments.find((attachment) => {
-            const attachmentUrl = attachment.url || attachment.preview_url || "";
-            return attachment.type === "image" && isURL(attachmentUrl);
-        });
-
-        if (!imageAttachment) {
-            return null;
-        }
-
-        return imageAttachment.url || imageAttachment.preview_url || null;
+        return attachments.flatMap((a) => {
+            if (a.type !== "image") return [];
+            const u = asImageUrlOrNull(a.url || a.preview_url);
+            return u ? [u] : [];
+        }).slice(0, 16);
     } catch (error) {
         if (debug) {
             console.error("[I link therefore iframe] Failed to resolve Mastodon image:", error);
         }
-        return null;
+        return [];
     }
 }
 
-async function resolveRedditImageUrl(
+async function resolveAllRedditImageUrls(
     url: string,
     debug: boolean = false,
-): Promise<string | null> {
+): Promise<string[]> {
     if (!REDDIT_POST_URL_REGEX.test(url)) {
-        return null;
+        return [];
     }
 
     try {
@@ -358,29 +353,38 @@ async function resolveRedditImageUrl(
 
         const postData = listing?.[0]?.data?.children?.[0]?.data;
         if (!postData) {
-            return null;
+            return [];
         }
 
         const mediaMetadata = postData.media_metadata ?? {};
         const galleryItems = postData.gallery_data?.items ?? [];
-        const galleryFirstImage = galleryItems
-            .map((item) => (item.media_id ? mediaMetadata[item.media_id] : undefined))
-            .find((item) => item?.e === "Image")?.s?.u;
 
-        const metadataFirstImage = Object.values(mediaMetadata)
-            .find((item) => item?.e === "Image")?.s?.u;
+        if (galleryItems.length > 0) {
+            const galleryImages = galleryItems.slice(0, 16).flatMap((item) => {
+                if (!item.media_id) return [];
+                const meta = mediaMetadata[item.media_id];
+                const u = meta?.e === "Image" ? asImageUrlOrNull(meta?.s?.u) : null;
+                return u ? [u] : [];
+            });
+            if (galleryImages.length > 0) {
+                return galleryImages;
+            }
+        }
 
-        return firstImageUrl([
+        // Non-gallery post: return at most one image.
+        const single = firstImageUrl([
             postData.url_overridden_by_dest,
             postData.preview?.images?.[0]?.source?.url,
-            galleryFirstImage,
-            metadataFirstImage,
+            ...Object.values(mediaMetadata)
+                .filter((m) => m?.e === "Image")
+                .map((m) => m.s?.u),
         ]);
+        return single ? [single] : [];
     } catch (error) {
         if (debug) {
             console.error("[I link therefore iframe] Failed to resolve Reddit image:", error);
         }
-        return null;
+        return [];
     }
 }
 
@@ -633,13 +637,13 @@ async function resolveTelegramImageUrl(
     return await resolveOpenGraphImageUrl(url, "Telegram", debug);
 }
 
-async function resolveSteamImageUrl(
+async function resolveAllSteamImageUrls(
     url: string,
     debug: boolean = false,
-): Promise<string | null> {
+): Promise<string[]> {
     const steamInfo = getSteamAppInfo(url);
     if (!steamInfo) {
-        return null;
+        return [];
     }
 
     try {
@@ -657,45 +661,64 @@ async function resolveSteamImageUrl(
         >;
 
         const appData = data?.[steamInfo.appId]?.data;
-        return firstImageUrl([
-            appData?.screenshots?.[0]?.path_full,
-            appData?.header_image,
-        ]);
+        if (!appData) {
+            return [];
+        }
+
+        const screenshots = (appData.screenshots ?? [])
+            .slice(0, 5)
+            .flatMap((s) => {
+                const u = asImageUrlOrNull(s.path_full);
+                return u ? [u] : [];
+            });
+
+        const headerImage = asImageUrlOrNull(appData.header_image);
+        return [...screenshots, ...(headerImage ? [headerImage] : [])];
     } catch (error) {
         if (debug) {
             console.error("[I link therefore iframe] Failed to resolve Steam image:", error);
         }
-        return null;
+        return [];
     }
 }
 
-export async function resolveSocialMediaImageUrl(
+export async function resolveAllSocialMediaImageUrls(
     url: string,
     debug: boolean = false,
-): Promise<string | null> {
-    const resolvers = [
+): Promise<string[]> {
+    const multiResolvers: Array<(url: string, debug: boolean) => Promise<string[]>> = [
+        resolveAllMastodonImageUrls,
+        resolveAllRedditImageUrls,
+        resolveAllSteamImageUrls,
+    ];
+
+    for (const resolver of multiResolvers) {
+        const resolved = await resolver(url, debug);
+        if (resolved.length > 0) {
+            return resolved;
+        }
+    }
+
+    const singleResolvers: Array<(url: string, debug: boolean) => Promise<string | null>> = [
         resolveFacebookImageUrl,
         resolveInstagramImageUrl,
         resolvePinterestImageUrl,
         resolveTelegramImageUrl,
-        resolveMastodonImageUrl,
-        resolveRedditImageUrl,
         resolveTikTokImageUrl,
         resolveImgurImageUrl,
         resolveSoundCloudImageUrl,
         resolveSpotifyImageUrl,
         resolveCodepenImageUrl,
-        resolveSteamImageUrl,
     ];
 
-    for (const resolver of resolvers) {
+    for (const resolver of singleResolvers) {
         const resolved = await resolver(url, debug);
         if (resolved) {
-            return resolved;
+            return [resolved];
         }
     }
 
-    return null;
+    return [];
 }
 
     export async function saveGoogleDocToVault(

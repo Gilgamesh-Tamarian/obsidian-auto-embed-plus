@@ -3,7 +3,7 @@ import { AutoEmbedSettingTab, DEFAULT_SETTINGS, PluginSettings } from 'src/setti
 import {
 	isLinkToImage,
 	isURL,
-	resolveSocialMediaImageUrl,
+	resolveAllSocialMediaImageUrls,
 	saveImageUrlToVault,
 	saveGoogleDocToVault,
 } from 'src/utility';
@@ -186,22 +186,24 @@ export default class AutoEmbedPlugin extends Plugin {
 
 		if (this.settings.saveImagesToVault) {
 			if (this.settings.saveSocialMediaImagesToVault) {
-				const resolvedSocialImageUrl = await resolveSocialMediaImageUrl(
+				const resolvedSocialImageUrls = await resolveAllSocialMediaImageUrls(
 					originalUrl,
 					this.settings.debug,
 				);
 
-				if (resolvedSocialImageUrl) {
-					// Save first social media attachment while preserving the embed URL in the note.
-					await saveImageUrlToVault(
-						resolvedSocialImageUrl,
-						this.app.vault,
-						this.settings.imageFolderPath,
-						this.settings.debug,
-					);
+				if (resolvedSocialImageUrls.length > 0) {
+					// Save all social media attachments while preserving the embed URL in the note.
+					await Promise.all(resolvedSocialImageUrls.map((imgUrl) =>
+						saveImageUrlToVault(
+							imgUrl,
+							this.app.vault,
+							this.settings.imageFolderPath,
+							this.settings.debug,
+						),
+					));
 
 					if (this.settings.debug) {
-						console.log("[I link therefore iframe] Saved social media image and kept embed URL:", originalUrl);
+						console.log("[I link therefore iframe] Saved social media images and kept embed URL:", originalUrl);
 					}
 				} else {
 					embedUrl = await saveImageUrlToVault(

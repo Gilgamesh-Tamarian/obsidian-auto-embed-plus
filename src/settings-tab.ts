@@ -225,7 +225,7 @@ export class AutoEmbedSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName("Save social media images to vault")
-            .setDesc("For supported platforms (Instagram, Facebook, Pinterest, Telegram, Mastodon, Reddit, TikTok, Imgur, SoundCloud, Spotify, CodePen, Steam), fetch the first available media image and save it locally")
+            .setDesc("For supported platforms (Instagram, Facebook, Pinterest, Telegram, Mastodon, Reddit, TikTok, Imgur, SoundCloud, Spotify, CodePen, Steam), fetch available media images and save them locally")
             .addToggle(toggle => toggle
                 .setValue(settings.saveSocialMediaImagesToVault)
                 .onChange(async value => {
