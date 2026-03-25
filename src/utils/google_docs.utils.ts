@@ -344,7 +344,7 @@ export async function updateAllGoogleDocs(
 
     for (const sourceUrl of uniqueUrls) {
         try {
-            await saveGoogleDocToVault(sourceUrl, vault, fileManager, folderPath, "pdf", "pdf", true, debug);
+            await saveGoogleDocToVault(sourceUrl, vault, fileManager, folderPath, "md", "pdf", "pdf", true, debug);
             updated++;
         } catch {
             errors++;
@@ -359,6 +359,7 @@ export async function saveGoogleDocToVault(
     vault: Vault,
     fileManager: FileManager,
     folderPath: string,
+    docsFormat: "md" | "pdf" | "docx" | "odt" = "md",
     slidesFormat: "pdf" | "pptx" | "odp" = "pdf",
     sheetsFormat: "pdf" | "xlsx" | "ods" = "pdf",
     forceOverwrite = false,
@@ -374,7 +375,10 @@ export async function saveGoogleDocToVault(
     await ensureFolderExists(vault, folderPath);
 
     if (resourceType === "document") {
-        const exportUrl = `https://docs.google.com/document/d/${resourceId}/export?format=md`;
+        // Determine export format and extension
+        const exportFormat: "md" | "pdf" | "docx" | "odt" = docsFormat;
+        const fileExtension = docsFormat;
+        const exportUrl = `https://docs.google.com/document/d/${resourceId}/export?format=${exportFormat}`;
 
         try {
             const response = await requestUrl({ url: exportUrl, method: "GET" });
@@ -388,37 +392,48 @@ export async function saveGoogleDocToVault(
                 return;
             }
 
-            const content = response.text;
-            if (!content)
-                return;
-
             // Use content-disposition header as primary source, fall back to first heading, then short-id label.
             const contentDisposition = response.headers["content-disposition"] ?? "";
             const dispositionName = parseContentDispositionFileName(contentDisposition) ?? "";
-            const titleFromDisposition = dispositionName.replace(/\.md$/i, "").trim();
-            // Search for any heading (# ### ## etc) at line start, not just the first line
-            const headingMatch = content.match(/^#+\s+(.+)/m);
-            const headingTitle = headingMatch?.[1]?.trim();
-            const title = titleFromDisposition || headingTitle || `google-doc-${resourceId.slice(0, 8)}`;
-            const fileName = `${sanitizeFileName(title)}.md`;
-            const assetsFolderPath = normalizePath(`${folderPath}/${sanitizeFileName(title)}-assets`);
+            const titleFromDisposition = dispositionName.replace(new RegExp(`\\.${fileExtension}$`, "i"), "").trim();
+            let title = titleFromDisposition;
+            if (!title && exportFormat === "md") {
+                // For markdown, try to extract heading
+                const content = response.text;
+                const headingMatch = content.match(/^#+\s+(.+)/m);
+                const headingTitle = headingMatch?.[1]?.trim();
+                title = headingTitle || `google-doc-${resourceId.slice(0, 8)}`;
+            }
+            if (!title) {
+                title = `google-doc-${resourceId.slice(0, 8)}`;
+            }
+            const fileName = `${sanitizeFileName(title)}.${fileExtension}`;
             const filePath = normalizePath(`${folderPath}/${fileName}`);
             const existingDocFile = vault.getAbstractFileByPath(filePath);
             if (existingDocFile && !forceOverwrite) return;
 
             if (existingDocFile) {
-                const existingAssetsFolder = vault.getAbstractFileByPath(assetsFolderPath);
-                if (existingAssetsFolder) await fileManager.trashFile(existingAssetsFolder);
                 await fileManager.trashFile(existingDocFile);
             }
 
-            const step1 = await localizeDataUriImageRefs(content, vault, folderPath, assetsFolderPath, debug);
-            const step2 = await localizeMarkdownImageLinks(step1, vault, folderPath, assetsFolderPath, debug);
-            const localizedContent = await localizeHtmlImageTagSources(step2, vault, folderPath, assetsFolderPath, debug);
-            const contentWithSource = `---\ngoogle-docs-source: "${url}"\n---\n\n${localizedContent}`;
-            await vault.create(filePath, contentWithSource);
-            if (debug) {
-                console.debug("[I link therefore iframe] Saved Google Doc to vault:", filePath);
+            if (exportFormat === "md") {
+                // Markdown: localize images and add frontmatter
+                const assetsFolderPath = normalizePath(`${folderPath}/${sanitizeFileName(title)}-assets`);
+                const content = response.text;
+                const step1 = await localizeDataUriImageRefs(content, vault, folderPath, assetsFolderPath, debug);
+                const step2 = await localizeMarkdownImageLinks(step1, vault, folderPath, assetsFolderPath, debug);
+                const localizedContent = await localizeHtmlImageTagSources(step2, vault, folderPath, assetsFolderPath, debug);
+                const contentWithSource = `---\ngoogle-docs-source: "${url}"\n---\n\n${localizedContent}`;
+                await vault.create(filePath, contentWithSource);
+                if (debug) {
+                    console.debug("[I link therefore iframe] Saved Google Doc as Markdown to vault:", filePath);
+                }
+            } else {
+                // Binary formats: pdf, docx, odt
+                await vault.createBinary(filePath, response.arrayBuffer);
+                if (debug) {
+                    console.debug(`Saved Google Doc as ${exportFormat} to vault:`, filePath);
+                }
             }
         } catch (error) {
             if (debug) {

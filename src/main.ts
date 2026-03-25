@@ -246,6 +246,7 @@ export default class AutoEmbedPlugin extends Plugin {
 				this.app.vault,
 				this.app.fileManager,
 				this.settings.googleDocsFolderPath,
+				this.settings.googleDocsFormat,
 				this.settings.googleSlidesFormat,
 				this.settings.googleSheetsFormat,
 				false,

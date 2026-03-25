@@ -53,6 +53,7 @@ export interface PluginSettings {
     imageFolderPath: string;
     googleDocsFolderPath: string;
     saveGoogleDocsToVault: boolean;
+    googleDocsFormat: "md" | "pdf" | "docx" | "odt";
     googleSlidesFormat: "pdf" | "pptx" | "odp";
     googleSheetsFormat: "pdf" | "xlsx" | "ods";
     saveQuizletCardsToVault: boolean;
@@ -74,6 +75,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     imageFolderPath: "linked-iframe-images",
     googleDocsFolderPath: "linked-iframe-docs",
     saveGoogleDocsToVault: false,
+    googleDocsFormat: "md",
     googleSlidesFormat: "pdf",
     googleSheetsFormat: "pdf",
     saveQuizletCardsToVault: false,
@@ -269,6 +271,21 @@ export class AutoEmbedSettingTab extends PluginSettingTab {
 
                 }));
 
+
+        new Setting(googleDocsContent)
+            .setName("Google docs export format")
+            .setDesc("Choose file format when exporting google docs. Only Markdown (.md) supports image localization and refresh.")
+            .addDropdown(dropdown => dropdown
+                .addOption("md", "Markdown (.md, default)")
+                .addOption("pdf", "PDF (.pdf)")
+                .addOption("docx", "Word (.docx)")
+                .addOption("odt", "OpenDocument (.odt)")
+                .setValue(settings.googleDocsFormat)
+                .onChange(async value => {
+                    settings.googleDocsFormat = value as "md" | "pdf" | "docx" | "odt";
+                    await plugin.saveSettings();
+                }));
+
         new Setting(googleDocsContent)
             .setName("Google slides export format")
             .setDesc("Choose file format when exporting google slides")
@@ -297,7 +314,7 @@ export class AutoEmbedSettingTab extends PluginSettingTab {
 
         new Setting(googleDocsContent)
             .setName("Refresh saved google docs")
-            .setDesc("Re-download all previously saved google docs from the google-docs-source property in each note.\nDoes not work for slides/spreadsheets.")
+            .setDesc("Re-download all previously saved google docs from the google-docs-source property in each note.\nOnly works for docs saved as markdown.")
             .addButton(button => {
                 let isUpdating = false;
 
