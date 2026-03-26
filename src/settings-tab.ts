@@ -260,8 +260,8 @@ export class AutoEmbedSettingTab extends PluginSettingTab {
         );
 
         new Setting(googleDocsContent)
-            .setName("Save google docs/slides/spreadsheets to vault")
-            .setDesc("Download a local copy of the document when embedding from google workspace. Docs will be saved as Markdown, slides/sheets in chosen format.")
+            .setName("Save Google Docs/Slides/Spreadsheets to vault")
+            .setDesc("Download a local copy of the document when embedding from Google Workspace. Docs will be saved as markdown, slides/sheets in chosen format.")
             .addToggle(toggle => toggle
                 .setValue(settings.saveGoogleDocsToVault)
                 .onChange(async value => {
@@ -273,8 +273,8 @@ export class AutoEmbedSettingTab extends PluginSettingTab {
 
 
         new Setting(googleDocsContent)
-            .setName("Google docs export format")
-            .setDesc("Choose file format when exporting google docs. Only Markdown (.md) supports image localization and refresh.")
+            .setName("Google Docs export format")
+            .setDesc("Choose file format when exporting Google Docs. Only markdown (.md) supports image localization and refresh.")
             .addDropdown(dropdown => dropdown
                 .addOption("md", "Markdown (.md, default)")
                 .addOption("pdf", "PDF (.pdf)")
@@ -287,8 +287,8 @@ export class AutoEmbedSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(googleDocsContent)
-            .setName("Google slides export format")
-            .setDesc("Choose file format when exporting google slides")
+            .setName("Google Slides export format")
+            .setDesc("Choose file format when exporting Google Slides")
             .addDropdown(dropdown => dropdown
                 .addOption("pdf", "PDF (default)")
                 .addOption("pptx", "Pptx (powerpoint)")
@@ -300,8 +300,8 @@ export class AutoEmbedSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(googleDocsContent)
-            .setName("Google sheets export format")
-            .setDesc("Choose file format when exporting google sheets")
+            .setName("Google Sheets export format")
+            .setDesc("Choose file format when exporting Google Sheets")
             .addDropdown(dropdown => dropdown
                 .addOption("pdf", "PDF (default)")
                 .addOption("xlsx", "Xlsx (excel)")
